@@ -24,27 +24,27 @@ delay = 0.001        # Schrittgeschwindigkeit (Sekunden zwischen Impulsen)
 
 print("Starte Motorbewegung...")
 
-try:
-    for i in range(steps):
-        GPIO.output(STEP, GPIO.HIGH)
-        time.sleep(delay)
-        GPIO.output(STEP, GPIO.LOW)
-        time.sleep(delay)
+# try:
+#     for i in range(steps):
+#         GPIO.output(STEP, GPIO.HIGH)
+#         time.sleep(delay)
+#         GPIO.output(STEP, GPIO.LOW)
+#         time.sleep(delay)
 
-    # Richtung wechseln
-    GPIO.output(DIR, GPIO.LOW)
-    time.sleep(1)
+#     # Richtung wechseln
+#     GPIO.output(DIR, GPIO.LOW)
+#     time.sleep(1)
 
-    for i in range(steps):
-        GPIO.output(STEP, GPIO.HIGH)
-        time.sleep(delay)
-        GPIO.output(STEP, GPIO.LOW)
-        time.sleep(delay)
+#     for i in range(steps):
+#         GPIO.output(STEP, GPIO.HIGH)
+#         time.sleep(delay)
+#         GPIO.output(STEP, GPIO.LOW)
+#         time.sleep(delay)
 
-except KeyboardInterrupt:
-    print("\nBeende Programm...")
+# except KeyboardInterrupt:
+#     print("\nBeende Programm...")
 
-finally:
-    # Treiber deaktivieren
-    GPIO.output(EN, GPIO.HIGH)
-    GPIO.cleanup()
+# finally:
+#     # Treiber deaktivieren
+#     GPIO.output(EN, GPIO.HIGH)
+#     GPIO.cleanup()
