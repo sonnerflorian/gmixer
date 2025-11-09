@@ -1,50 +1,35 @@
-import RPi.GPIO as GPIO
-import time
+import RPi.GPIO as GPIO, time
 
-# Pin-Definitionen
-DIR = 16     # Drehrichtung
-STEP = 20    # Schrittimpuls
-EN = 21      # Enable
-
-# Setup
+DIR, STEP, EN = 16, 20, 21
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(DIR, GPIO.OUT)
 GPIO.setup(STEP, GPIO.OUT)
 GPIO.setup(EN, GPIO.OUT)
 
-# Treiber aktivieren (LOW = an)
-GPIO.output(EN, GPIO.LOW)
+GPIO.output(EN, GPIO.LOW)     # aktiv
+GPIO.output(DIR, GPIO.HIGH)   # Richtung
 
-# Richtung einstellen (True oder False)
-GPIO.output(DIR, GPIO.HIGH)  # HIGH = vorwärts, LOW = rückwärts
-
-# Parameter
-steps = 200          # Anzahl der Schritte (z. B. 200 = 1 Umdrehung bei 1,8°/Step)
-delay = 0.001        # Schrittgeschwindigkeit (Sekunden zwischen Impulsen)
+delay = 0.002
+steps = 200
 
 print("Starte Motorbewegung...")
 
-# try:
-#     for i in range(steps):
-#         GPIO.output(STEP, GPIO.HIGH)
-#         time.sleep(delay)
-#         GPIO.output(STEP, GPIO.LOW)
-#         time.sleep(delay)
+try:
+    for _ in range(steps):
+        GPIO.output(STEP, GPIO.HIGH)
+        time.sleep(delay)
+        GPIO.output(STEP, GPIO.LOW)
+        time.sleep(delay)
 
-#     # Richtung wechseln
-#     GPIO.output(DIR, GPIO.LOW)
-#     time.sleep(1)
+    GPIO.output(DIR, GPIO.LOW)
+    time.sleep(0.5)
 
-#     for i in range(steps):
-#         GPIO.output(STEP, GPIO.HIGH)
-#         time.sleep(delay)
-#         GPIO.output(STEP, GPIO.LOW)
-#         time.sleep(delay)
+    for _ in range(steps):
+        GPIO.output(STEP, GPIO.HIGH)
+        time.sleep(delay)
+        GPIO.output(STEP, GPIO.LOW)
+        time.sleep(delay)
 
-# except KeyboardInterrupt:
-#     print("\nBeende Programm...")
-
-# finally:
-#     # Treiber deaktivieren
-#     GPIO.output(EN, GPIO.HIGH)
-#     GPIO.cleanup()
+finally:
+    GPIO.output(EN, GPIO.HIGH)  # deaktivieren
+    GPIO.cleanup()
