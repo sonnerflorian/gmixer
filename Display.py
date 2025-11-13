@@ -1,8 +1,15 @@
 import tkinter as tk
 from pathlib import Path
 from Gui_style import (
-    BUTTON_BG, BUTTON_FG, BUTTON_ACTIVE, BUTTON_FONT,
-    BACKGROUND, TEXT_COLOR, STATUS_FONT
+    PRIMARY_RED,
+    BACKGROUND,
+    TEXT_COLOR,
+    BUTTON_BG,
+    BUTTON_FG,
+    BUTTON_ACTIVE_BG,
+    BUTTON_ACTIVE_FG,
+    STATUS_FONT,
+    BUTTON_FONT,
 )
 
 
@@ -54,8 +61,8 @@ else:
             font=BUTTON_FONT,
             bg=BUTTON_BG,
             fg=BUTTON_FG,
-            activebackground=BUTTON_ACTIVE,
-            activeforeground=BUTTON_FG,
+            activebackground=BUTTON_ACTIVE_BG,
+            activeforeground=BUTTON_ACTIVE_FG,
             relief="flat",
             bd=0,
             highlightthickness=0,
@@ -63,7 +70,7 @@ else:
             pady=20,
             width=15,
             height=2,
-            command=lambda p=file_path: start_recipe(p)
+            command=lambda p=file_path: start_recipe(p),
         )
 
 

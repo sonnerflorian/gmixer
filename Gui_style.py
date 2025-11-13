@@ -1,18 +1,26 @@
-# Farben
-BUTTON_BG = "#e8e8e8"
-BUTTON_FG = "#333333"
-BUTTON_ACTIVE = "#d0d0d0"
+# gui_style.py
 
-BACKGROUND = "white"
-TEXT_COLOR = "red"
+# Primärfarbe aus deinem Logo
+PRIMARY_RED = "#c62729"
 
-# Font
+# Grundfarben
+BACKGROUND = "white"        # kompletter Hintergrund
+TEXT_COLOR = PRIMARY_RED    # Standard-Textfarbe
+
+# Button-Design
+BUTTON_BG = "white"         # Button-Hintergrund
+BUTTON_FG = PRIMARY_RED     # Button-Schrift
+BUTTON_ACTIVE_BG = "#f7d4d6"  # leichtes Rosa beim Drücken/Hover
+BUTTON_ACTIVE_FG = PRIMARY_RED
+
+# Schriftarten
+STATUS_FONT = ("Arial", 32, "bold")
 BUTTON_FONT = ("Arial", 24, "bold")
-STATUS_FONT = ("Arial", 32)
 
-# Hover-Effekte
 def on_enter(e):
-    e.widget['bg'] = BUTTON_ACTIVE
+    """Hover-Effekt für Buttons."""
+    e.widget["bg"] = BUTTON_ACTIVE_BG
 
 def on_leave(e):
-    e.widget['bg'] = BUTTON_BG
+    """Hover-Effekt beenden."""
+    e.widget["bg"] = BUTTON_BG
