@@ -11,6 +11,7 @@ from Gui_style import (
     BUTTON_ACTIVE_FG,
     STATUS_FONT,
     BUTTON_FONT,
+    BUTTON_RADIUS
 )
 
 
@@ -24,67 +25,110 @@ RECIPES_DIR = SCRIPT_DIR / "Rezepte"
 
 # --- Funktion zum Erstellen eines runden Buttons ---
 def create_rounded_button(parent, text, command):
+    # Größe des Buttons
+    width = 350
+    height = 120
+    r = BUTTON_RADIUS  # Rundungsradius
 
-    # Canvas für runden Button
     canvas = tk.Canvas(
         parent,
-        width=350, height=120,
+        width=width,
+        height=height,
         bg=parent["bg"],
         highlightthickness=0,
         bd=0
     )
 
-    # Koordinaten
-    x1, y1, x2, y2 = 10, 10, 340, 110
-    r = BUTTON_RADIUS
+    x1, y1 = 5, 5
+    x2, y2 = width - 5, height - 5
 
-    # Abgerundetes Rechteck zeichnen
-    canvas.create_round_rect = lambda *args, **kwargs: canvas.create_polygon(
-        [
-            x1+r, y1,
-            x2-r, y1,
-            x2, y1+r,
-            x2, y2-r,
-            x2-r, y2,
-            x1+r, y2,
-            x1, y2-r,
-            x1, y1+r,
-        ],
-        smooth=True,
-        **kwargs
+    # ---- Abgerundetes Rechteck aus Arcs + Rechteckteilen ----
+
+    # Oben links (Arc)
+    canvas.create_arc(
+        x1, y1, x1 + 2*r, y1 + 2*r,
+        start=90, extent=90,
+        fill="white", outline=PRIMARY_RED, width=3
     )
 
-    rect = canvas.create_round_rect(
-        fill="white",
-        outline=PRIMARY_RED,
-        width=3
+    # Oben rechts (Arc)
+    canvas.create_arc(
+        x2 - 2*r, y1, x2, y1 + 2*r,
+        start=0, extent=90,
+        fill="white", outline=PRIMARY_RED, width=3
     )
 
-    # Text
-    text_id = canvas.create_text(
-        (175, 60),
+    # Unten rechts (Arc)
+    canvas.create_arc(
+        x2 - 2*r, y2 - 2*r, x2, y2,
+        start=270, extent=90,
+        fill="white", outline=PRIMARY_RED, width=3
+    )
+
+    # Unten links (Arc)
+    canvas.create_arc(
+        x1, y2 - 2*r, x1 + 2*r, y2,
+        start=180, extent=90,
+        fill="white", outline=PRIMARY_RED, width=3
+    )
+
+    # Mittleres Rechteck (oben)
+    canvas.create_rectangle(
+        x1 + r, y1, x2 - r, y2,
+        fill="white", outline=PRIMARY_RED, width=3
+    )
+
+    # Mittleres Rechteck (links + rechts)
+    canvas.create_rectangle(
+        x1, y1 + r, x2, y2 - r,
+        fill="white", outline=PRIMARY_RED, width=3
+    )
+
+    # ---- Text ----
+    canvas.create_text(
+        width // 2,
+        height // 2,
         text=text,
         fill=PRIMARY_RED,
         font=BUTTON_FONT
     )
 
-    # Klick-Effekt
-    def on_click(event):
-        command()
+    # ---- Klick ----
+    canvas.bind("<Button-1>", lambda e: command())
 
-    canvas.bind("<Button-1>", on_click)
-
-    # Hover-Effekte
+    # ---- Hover ----
     def on_enter(event):
-        canvas.itemconfig(rect, fill="#f7d4d6")
+        canvas.configure(bg=BUTTON_ACTIVE_BG)
 
     def on_leave(event):
-        canvas.itemconfig(rect, fill="white")
+        canvas.configure(bg=parent["bg"])
 
     canvas.bind("<Enter>", on_enter)
     canvas.bind("<Leave>", on_leave)
 
     return canvas
+
+
+# --- Funktion zum Starten des Rezeptprogramms ---
+def start_recipe(file_path: Path):
+    # Rezeptname herausfiltern
+    name = file_path.stem.replace("Rezept_", "")
+
+    # Text anzeigen
+    status_label.config(text=f"{name} wird zubereitet...")
+
+    # Alle Buttons ausblenden
+    frame.pack_forget()
+
+    print(f"Starte: {file_path}")
+
+    # Rezeptprogramm ausführen
+    if file_path.suffix == ".py":
+        subprocess.Popen(["python3", str(file_path)])
+    elif file_path.suffix == ".sh":
+        subprocess.Popen(["bash", str(file_path)])
+    else:
+        subprocess.Popen(["xdg-open", str(file_path)])
 
 
 
@@ -125,6 +169,9 @@ else:
     columns = 3  # Anzahl Spalten anpassen, wenn du willst
     for i, file_path in enumerate(files):
         name = file_path.stem.replace("Rezept_", "")  # Dateiname ohne .txt / .py / etc.
+        row = i // columns
+        col = i % columns
+
 
         rounded = create_rounded_button(
             frame,
@@ -136,8 +183,7 @@ else:
 
 
 
-        row = i // columns
-        col = i % columns
+        
         rounded.grid(row=row, column=col, padx=20, pady=20, sticky="nsew")
 
     # Spalten/Zeilen dehnbar machen
@@ -148,27 +194,6 @@ else:
         frame.grid_rowconfigure(r, weight=1)
 
 
-
-# --- Funktion zum Starten des Rezeptprogramms ---
-def start_recipe(file_path: Path):
-    # Rezeptname herausfiltern
-    name = file_path.stem.replace("Rezept_", "")
-
-    # Text anzeigen
-    status_label.config(text=f"{name} wird zubereitet...")
-
-    # Alle Buttons ausblenden
-    frame.pack_forget()
-
-    print(f"Starte: {file_path}")
-
-    # Rezeptprogramm ausführen
-    if file_path.suffix == ".py":
-        subprocess.Popen(["python3", str(file_path)])
-    elif file_path.suffix == ".sh":
-        subprocess.Popen(["bash", str(file_path)])
-    else:
-        subprocess.Popen(["xdg-open", str(file_path)])
 
 
 
