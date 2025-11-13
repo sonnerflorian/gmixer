@@ -1,4 +1,5 @@
 import tkinter as tk
+from pathlib import Path
 
 # Pfad zu diesem Script
 SCRIPT_DIR = Path(__file__).resolve().parent
