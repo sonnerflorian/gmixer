@@ -14,7 +14,7 @@ Name=Getränkemixer
 Comment=Startet das Getränkemixer-Programm
 Exec=/usr/bin/python3 /home/gmixer/gmixer/Display.py
 Path=/home/gmixer/gmixer
-Icon=/home/gmixer/gmixer/icon.jpg
+Icon=/home/gmixer/gmixer/icon.png
 Terminal=false" > /home/gmixer/Desktop/Getraenkemixer.desktop
 
 chmod +x /home/gmixer/Desktop/Getraenkemixer.desktop
