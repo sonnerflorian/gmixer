@@ -1,5 +1,10 @@
 import tkinter as tk
 from pathlib import Path
+from gui_style import (
+    BUTTON_BG, BUTTON_FG, BUTTON_ACTIVE, BUTTON_FONT,
+    BACKGROUND, TEXT_COLOR, STATUS_FONT
+)
+
 
 # Pfad zu diesem Script
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -11,11 +16,20 @@ root = tk.Tk()
 root.title("Hello World")
 root.attributes("-fullscreen", True)
 root.bind("<Escape>", lambda e: root.destroy())
+root.configure(bg=BACKGROUND)
 
-frame = tk.Frame(root)
+
+
+frame = tk.Frame(root, bg=BACKGROUND)
 frame.pack(expand=True, fill="both", padx=40, pady=40)
 
-status_label = tk.Label(root, text="", font=("Arial", 32))
+status_label = tk.Label(
+    root,
+    text="",
+    font=STATUS_FONT,
+    fg=TEXT_COLOR,
+    bg=BACKGROUND
+)
 status_label.pack(pady=20)
 
 
@@ -37,13 +51,22 @@ else:
         btn = tk.Button(
             frame,
             text=name,
-            font=("Arial", 24),
+            font=BUTTON_FONT,
+            bg=BUTTON_BG,
+            fg=BUTTON_FG,
+            activebackground=BUTTON_ACTIVE,
+            activeforeground=BUTTON_FG,
+            relief="flat",
+            bd=0,
+            highlightthickness=0,
+            padx=30,
+            pady=20,
             width=15,
-            height=3,
-            # Hier kannst du später eine Funktion einbauen,
-            # z.B. Rezept laden, Motor starten etc.
+            height=2,
             command=lambda p=file_path: start_recipe(p)
         )
+
+
 
         row = i // columns
         col = i % columns
@@ -58,20 +81,22 @@ else:
 
 # --- Funktion zum Starten des Rezeptprogramms ---
 def start_recipe(file_path: Path):
-
+    # Rezeptname herausfiltern
     name = file_path.stem.replace("Rezept_", "")
+
+    # Text anzeigen
     status_label.config(text=f"{name} wird zubereitet...")
+
+    # Alle Buttons ausblenden
+    frame.pack_forget()
+
     print(f"Starte: {file_path}")
 
-    # Python-Rezept starten
+    # Rezeptprogramm ausführen
     if file_path.suffix == ".py":
         subprocess.Popen(["python3", str(file_path)])
-
-    # Shell-Skript starten
     elif file_path.suffix == ".sh":
         subprocess.Popen(["bash", str(file_path)])
-
-    # Andere Dateien → öffnen
     else:
         subprocess.Popen(["xdg-open", str(file_path)])
 
