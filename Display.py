@@ -1,6 +1,6 @@
 import tkinter as tk
 from pathlib import Path
-from gui_style import (
+from Gui_style import (
     BUTTON_BG, BUTTON_FG, BUTTON_ACTIVE, BUTTON_FONT,
     BACKGROUND, TEXT_COLOR, STATUS_FONT
 )
