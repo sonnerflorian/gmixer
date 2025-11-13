@@ -17,10 +17,7 @@ BUTTON_ACTIVE_FG = PRIMARY_RED
 STATUS_FONT = ("Arial", 32, "bold")
 BUTTON_FONT = ("Arial", 24, "bold")
 
-def on_enter(e):
-    """Hover-Effekt für Buttons."""
-    e.widget["bg"] = BUTTON_ACTIVE_BG
-
-def on_leave(e):
-    """Hover-Effekt beenden."""
-    e.widget["bg"] = BUTTON_BG
+BUTTON_BORDER_COLOR = PRIMARY_RED   # Dezenter roter Rahmen
+BUTTON_BORDER_WIDTH = 2             # Breite des Rahmens
+# Rundungsgrad der Ecken
+BUTTON_RADIUS = 20   # größere Zahl = rundere Ecken

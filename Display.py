@@ -1,5 +1,6 @@
 import tkinter as tk
 from pathlib import Path
+import subprocess 
 from Gui_style import (
     PRIMARY_RED,
     BACKGROUND,
@@ -13,11 +14,81 @@ from Gui_style import (
 )
 
 
+
+
 # Pfad zu diesem Script
 SCRIPT_DIR = Path(__file__).resolve().parent
 
 #Pad zu den Rezepten
 RECIPES_DIR = SCRIPT_DIR / "Rezepte"
+
+# --- Funktion zum Erstellen eines runden Buttons ---
+def create_rounded_button(parent, text, command):
+
+    # Canvas für runden Button
+    canvas = tk.Canvas(
+        parent,
+        width=350, height=120,
+        bg=parent["bg"],
+        highlightthickness=0,
+        bd=0
+    )
+
+    # Koordinaten
+    x1, y1, x2, y2 = 10, 10, 340, 110
+    r = BUTTON_RADIUS
+
+    # Abgerundetes Rechteck zeichnen
+    canvas.create_round_rect = lambda *args, **kwargs: canvas.create_polygon(
+        [
+            x1+r, y1,
+            x2-r, y1,
+            x2, y1+r,
+            x2, y2-r,
+            x2-r, y2,
+            x1+r, y2,
+            x1, y2-r,
+            x1, y1+r,
+        ],
+        smooth=True,
+        **kwargs
+    )
+
+    rect = canvas.create_round_rect(
+        fill="white",
+        outline=PRIMARY_RED,
+        width=3
+    )
+
+    # Text
+    text_id = canvas.create_text(
+        (175, 60),
+        text=text,
+        fill=PRIMARY_RED,
+        font=BUTTON_FONT
+    )
+
+    # Klick-Effekt
+    def on_click(event):
+        command()
+
+    canvas.bind("<Button-1>", on_click)
+
+    # Hover-Effekte
+    def on_enter(event):
+        canvas.itemconfig(rect, fill="#f7d4d6")
+
+    def on_leave(event):
+        canvas.itemconfig(rect, fill="white")
+
+    canvas.bind("<Enter>", on_enter)
+    canvas.bind("<Leave>", on_leave)
+
+    return canvas
+
+
+
+
 
 root = tk.Tk()
 root.title("Hello World")
@@ -55,29 +126,19 @@ else:
     for i, file_path in enumerate(files):
         name = file_path.stem.replace("Rezept_", "")  # Dateiname ohne .txt / .py / etc.
 
-        btn = tk.Button(
+        rounded = create_rounded_button(
             frame,
             text=name,
-            font=BUTTON_FONT,
-            bg=BUTTON_BG,
-            fg=BUTTON_FG,
-            activebackground=BUTTON_ACTIVE_BG,
-            activeforeground=BUTTON_ACTIVE_FG,
-            relief="flat",
-            bd=0,
-            highlightthickness=0,
-            padx=30,
-            pady=20,
-            width=15,
-            height=2,
-            command=lambda p=file_path: start_recipe(p),
+            command=lambda p=file_path: start_recipe(p)
         )
+        rounded.grid(row=row, column=col, padx=20, pady=20)
+
 
 
 
         row = i // columns
         col = i % columns
-        btn.grid(row=row, column=col, padx=20, pady=20, sticky="nsew")
+        rounded.grid(row=row, column=col, padx=20, pady=20, sticky="nsew")
 
     # Spalten/Zeilen dehnbar machen
     max_rows = (len(files) - 1) // columns + 1
@@ -85,6 +146,8 @@ else:
         frame.grid_columnconfigure(c, weight=1)
     for r in range(max_rows):
         frame.grid_rowconfigure(r, weight=1)
+
+
 
 # --- Funktion zum Starten des Rezeptprogramms ---
 def start_recipe(file_path: Path):
