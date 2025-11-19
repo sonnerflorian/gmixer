@@ -23,91 +23,6 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 #Pad zu den Rezepten
 RECIPES_DIR = SCRIPT_DIR / "Rezepte"
 
-# --- Funktion zum Erstellen eines runden Buttons ---
-def create_rounded_button(parent, text, command):
-    # Größe des Buttons
-    width = 350
-    height = 120
-    r = BUTTON_RADIUS  # Rundungsradius
-
-    canvas = tk.Canvas(
-        parent,
-        width=width,
-        height=height,
-        bg=parent["bg"],
-        highlightthickness=0,
-        bd=0
-    )
-
-    x1, y1 = 5, 5
-    x2, y2 = width - 5, height - 5
-
-    # ---- Abgerundetes Rechteck aus Arcs + Rechteckteilen ----
-
-    # Oben links (Arc)
-    canvas.create_arc(
-        x1, y1, x1 + 2*r, y1 + 2*r,
-        start=90, extent=90,
-        fill="white", outline=PRIMARY_RED, width=3
-    )
-
-    # Oben rechts (Arc)
-    canvas.create_arc(
-        x2 - 2*r, y1, x2, y1 + 2*r,
-        start=0, extent=90,
-        fill="white", outline=PRIMARY_RED, width=3
-    )
-
-    # Unten rechts (Arc)
-    canvas.create_arc(
-        x2 - 2*r, y2 - 2*r, x2, y2,
-        start=270, extent=90,
-        fill="white", outline=PRIMARY_RED, width=3
-    )
-
-    # Unten links (Arc)
-    canvas.create_arc(
-        x1, y2 - 2*r, x1 + 2*r, y2,
-        start=180, extent=90,
-        fill="white", outline=PRIMARY_RED, width=3
-    )
-
-    # Mittleres Rechteck (oben)
-    canvas.create_rectangle(
-        x1 + r, y1, x2 - r, y2,
-        fill="white", outline=PRIMARY_RED, width=3
-    )
-
-    # Mittleres Rechteck (links + rechts)
-    canvas.create_rectangle(
-        x1, y1 + r, x2, y2 - r,
-        fill="white", outline=PRIMARY_RED, width=3
-    )
-
-    # ---- Text ----
-    canvas.create_text(
-        width // 2,
-        height // 2,
-        text=text,
-        fill=PRIMARY_RED,
-        font=BUTTON_FONT
-    )
-
-    # ---- Klick ----
-    canvas.bind("<Button-1>", lambda e: command())
-
-    # ---- Hover ----
-    def on_enter(event):
-        canvas.configure(bg=BUTTON_ACTIVE_BG)
-
-    def on_leave(event):
-        canvas.configure(bg=parent["bg"])
-
-    canvas.bind("<Enter>", on_enter)
-    canvas.bind("<Leave>", on_leave)
-
-    return canvas
-
 
 # --- Funktion zum Starten des Rezeptprogramms ---
 def start_recipe(file_path: Path):
@@ -172,19 +87,23 @@ else:
         row = i // columns
         col = i % columns
 
-
-        rounded = create_rounded_button(
+        btn = tk.Button(
             frame,
             text=name,
+            font=BUTTON_FONT,
+            bg=BUTTON_BG,
+            fg=BUTTON_FG,
+            activebackground=BUTTON_ACTIVE_BG,
+            activeforeground=BUTTON_ACTIVE_FG,
+            relief="solid",
+            bd=2,
+            highlightthickness=0,
+            width=20,       # gleiche Breite für ALLE
+            height=5, 
             command=lambda p=file_path: start_recipe(p)
         )
-        rounded.grid(row=row, column=col, padx=20, pady=20)
+        btn.grid(row=row, column=col, padx=20, pady=20, sticky="nsew")
 
-
-
-
-        
-        rounded.grid(row=row, column=col, padx=20, pady=20, sticky="nsew")
 
     # Spalten/Zeilen dehnbar machen
     max_rows = (len(files) - 1) // columns + 1
