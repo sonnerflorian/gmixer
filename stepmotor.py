@@ -1,6 +1,7 @@
-import RPi.GPIO as GPIO, time
+import RPi.GPIO as GPIO
+import time
 
-DIR, STEP, EN = 0, 2, 3
+DIR, STEP, EN = 2, 3, 4
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(DIR, GPIO.OUT)
 GPIO.setup(STEP, GPIO.OUT)
@@ -9,7 +10,7 @@ GPIO.setup(EN, GPIO.OUT)
 GPIO.output(EN, GPIO.HIGH)     # aktiv
 GPIO.output(DIR, GPIO.HIGH)   # Richtung
 
-delay = 0.002
+delay = 0.2
 steps = 200
 
 print("Starte Motorbewegung...")
