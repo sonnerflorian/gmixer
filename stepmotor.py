@@ -2,6 +2,7 @@ import RPi.GPIO as GPIO
 import time
 
 DIR, STEP, EN = 3, 5, 7
+
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(DIR, GPIO.OUT)
 GPIO.setup(STEP, GPIO.OUT)
