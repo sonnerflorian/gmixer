@@ -11,8 +11,8 @@ GPIO.setup(EN, GPIO.OUT)
 GPIO.output(EN, GPIO.LOW)     # aktiv
 GPIO.output(DIR, GPIO.HIGH)   # Richtung
 
-delay = 0.00002
-steps = 200
+delay = 0.0002
+steps = 2000
 
 print("Starte Motorbewegung...")
 
