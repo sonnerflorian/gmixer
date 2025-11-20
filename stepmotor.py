@@ -8,35 +8,34 @@ GPIO.setup(DIR, GPIO.OUT)
 GPIO.setup(STEP, GPIO.OUT)
 GPIO.setup(EN, GPIO.OUT)
 
-GPIO.output(EN, GPIO.LOW)     # aktiv
-GPIO.output(DIR, GPIO.HIGH)   # Richtung
+GPIO.output(EN, GPIO.LOW)     # Treiber aktiv
+GPIO.output(DIR, GPIO.HIGH)   # Richtung vorwärts
 
-delay = 0.0002
-steps = 2000
+delay = 0.005   # 5 ms -> 100 Schritte pro Sekunde
+steps = 400
 
 print("Starte Motorbewegung...")
 
+try:
+    # Vorwärts
+    for _ in range(steps):
+        GPIO.output(STEP, GPIO.HIGH)
+        time.sleep(delay)
+        GPIO.output(STEP, GPIO.LOW)
+        time.sleep(delay)
 
-for _ in range(steps):
-    GPIO.output(STEP, GPIO.HIGH)
-    print("Step1")
-    time.sleep(delay)
-    print("Step2")
+    # kurze Pause
+    time.sleep(0.5)
 
-    GPIO.output(STEP, GPIO.LOW)
-    print("Step3")
+    # Rückwärts
+    GPIO.output(DIR, GPIO.LOW)
 
-    time.sleep(delay)
+    for _ in range(steps):
+        GPIO.output(STEP, GPIO.HIGH)
+        time.sleep(delay)
+        GPIO.output(STEP, GPIO.LOW)
+        time.sleep(delay)
 
-GPIO.output(DIR, GPIO.LOW)
-time.sleep(0.5)
-
-for _ in range(steps):
-    GPIO.output(STEP, GPIO.HIGH)
-    time.sleep(delay)
-    GPIO.output(STEP, GPIO.LOW)
-    time.sleep(delay)
-
-
-GPIO.output(EN, GPIO.HIGH)  # deaktivieren
-GPIO.cleanup()
+finally:
+    GPIO.output(EN, GPIO.HIGH)  # Treiber deaktivieren
+    GPIO.cleanup()
