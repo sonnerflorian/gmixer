@@ -20,7 +20,7 @@ print("Starte Motorbewegung...")
 for _ in range(steps):
     GPIO.output(STEP, GPIO.HIGH)
     print("Step1")
-    time.sleep(1)
+    time.sleep(delay)
     print("Step2")
 
     GPIO.output(STEP, GPIO.LOW)
