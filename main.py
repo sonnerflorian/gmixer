@@ -1,4 +1,5 @@
 import threading
+import os
 import tkinter as tk
 from pathlib import Path
 import subprocess
@@ -17,61 +18,61 @@ from Gui_style import (
     BUTTON_RADIUS
 )
 
-# Pfad zu diesem Script
 SCRIPT_DIR = Path(__file__).resolve().parent
-# Pad zu den Rezepten
 RECIPES_DIR = SCRIPT_DIR / "Rezepte"
 
-# Homing des Steppers ausführen, bevor GUI startet
+# optional: Homing direkt beim Start
 # try:
 #     initialisation_stepper.home_stepper()
 # except Exception as exc:
 #     print(f"Homing fehlgeschlagen: {exc}")
 #     sys.exit(1)
 
-current_thread = None  # merkt laufendes Rezept oder Homing
+current_thread = None
+SKIP_HOMING_AFTER = os.getenv("SKIP_HOMING_AFTER", "0") == "1"
 
 def set_buttons_state(state: str):
     for widget in frame.winfo_children():
         if isinstance(widget, tk.Button):
             widget.config(state=state)
 
-def do_homing_and_ready():
-    """Homing ausführen und Buttons danach freigeben."""
+def _finalize_homing(msg: str):
     global current_thread
-    status_label.config(text="Homing... bitte warten")
-    try:
-        initialisation_stepper.home_stepper()
-    except Exception as exc:
-        status_label.config(text=f"Homing fehlgeschlagen: {exc}")
-        current_thread = None
-        return
-    status_label.config(text="Bereit. Bitte Rezept wählen.")
+    status_label.config(text=msg)
     set_buttons_state("normal")
     current_thread = None
 
 def on_recipe_done(name: str):
-    """Nach Rezeptende Homing starten (Blockade bleibt, bis Homing fertig)."""
+    """Nach Rezeptende Homing starten; Buttons bleiben gesperrt bis fertig."""
     global current_thread
-    status_label.config(text=f"{name} fertig. Homing wird ausgeführt...")
-    # Homing im gleichen Thread ausführen, dann in GUI freigeben
-    do_homing_and_ready()
+    if SKIP_HOMING_AFTER:
+        _finalize_homing(f"{name} fertig. Homing übersprungen (Testmodus).")
+        return
 
-# --- Funktion zum Starten des Rezeptprogramms ---
+    status_label.config(text=f"{name} fertig. Homing wird ausgeführt...")
+
+    def homing_runner():
+        try:
+            initialisation_stepper.home_stepper()
+            msg = "Bereit. Bitte Rezept wählen."
+        except Exception as exc:
+            msg = f"Homing fehlgeschlagen: {exc}"
+        finally:
+            root.after(0, _finalize_homing, msg)
+
+    current_thread = threading.Thread(target=homing_runner, daemon=True)
+    current_thread.start()
+
 def start_recipe(file_path: Path):
     global current_thread
     if current_thread is not None:
         return  # schon ein Rezept/Homing aktiv
 
     name = file_path.stem.replace("Rezept_", "")
-
-    # Text anzeigen
     status_label.config(text=f"{name} wird zubereitet...")
     set_buttons_state("disabled")
-
     print(f"Starte: {file_path}")
 
-    # Rezeptprogramm vorbereiten
     if file_path.suffix == ".py":
         cmd = ["python3", str(file_path)]
     elif file_path.suffix == ".sh":
@@ -89,7 +90,7 @@ def start_recipe(file_path: Path):
     current_thread.start()
 
 root = tk.Tk()
-root.title("Hello World")
+root.title("Getränkemixer")
 root.attributes("-fullscreen", True)
 root.bind("<Escape>", lambda e: root.destroy())
 root.configure(bg=BACKGROUND)
@@ -97,31 +98,19 @@ root.configure(bg=BACKGROUND)
 frame = tk.Frame(root, bg=BACKGROUND)
 frame.pack(expand=True, fill="both", padx=40, pady=40)
 
-status_label = tk.Label(
-    root,
-    text="",
-    font=STATUS_FONT,
-    fg=TEXT_COLOR,
-    bg=BACKGROUND
-)
+status_label = tk.Label(root, text="", font=STATUS_FONT, fg=TEXT_COLOR, bg=BACKGROUND)
 status_label.pack(pady=20)
 
-if RECIPES_DIR.exists() and RECIPES_DIR.is_dir():
-    files = sorted(f for f in RECIPES_DIR.iterdir() if f.is_file())
-else:
-    files = []
+files = sorted(f for f in RECIPES_DIR.iterdir() if f.is_file()) if RECIPES_DIR.exists() else []
 
 if not files:
-    label = tk.Label(frame, text="Keine Rezeptdateien gefunden.", font=("Arial", 32))
-    label.pack()
+    tk.Label(frame, text="Keine Rezeptdateien gefunden.", font=("Arial", 32)).pack()
 else:
-    # Grid so einstellen, dass sich die Buttons schön verteilen
-    columns = 3  # Anzahl Spalten anpassen, wenn du willst
+    columns = 3
     for i, file_path in enumerate(files):
-        name = file_path.stem.replace("Rezept_", "")  # Dateiname ohne .txt / .py / etc.
+        name = file_path.stem.replace("Rezept_", "")
         row = i // columns
         col = i % columns
-
         btn = tk.Button(
             frame,
             text=name,
@@ -133,13 +122,12 @@ else:
             relief="solid",
             bd=2,
             highlightthickness=0,
-            width=20,       # gleiche Breite für ALLE
+            width=20,
             height=5,
             command=lambda p=file_path: start_recipe(p)
         )
         btn.grid(row=row, column=col, padx=20, pady=20, sticky="nsew")
 
-    # Spalten/Zeilen dehnbar machen
     max_rows = (len(files) - 1) // columns + 1
     for c in range(columns):
         frame.grid_columnconfigure(c, weight=1)
