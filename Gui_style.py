@@ -15,7 +15,7 @@ BUTTON_ACTIVE_FG = PRIMARY_RED
 
 # Schriftarten
 STATUS_FONT = ("Arial", 32, "bold")
-BUTTON_FONT = ("Arial", 24, "bold")
+BUTTON_FONT = ("Arial", 20, "bold")
 
 BUTTON_BORDER_COLOR = PRIMARY_RED   # Dezenter roter Rahmen
 BUTTON_BORDER_WIDTH = 2             # Breite des Rahmens
