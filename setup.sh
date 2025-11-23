@@ -12,7 +12,7 @@ echo "[Desktop Entry]
 Type=Application
 Name=Getränkemixer
 Comment=Startet das Getränkemixer-Programm
-Exec=/usr/bin/python3 /home/gmixer/gmixer/Display.py
+Exec=/usr/bin/python3 /home/gmixer/gmixer/main.py
 Path=/home/gmixer/gmixer
 Icon=/home/gmixer/gmixer/icon.png
 Terminal=false" > /home/gmixer/Desktop/Getraenkemixer.desktop
