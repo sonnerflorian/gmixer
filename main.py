@@ -3,10 +3,8 @@ import os
 import tkinter as tk
 from pathlib import Path
 import subprocess
-import sys
 import initialisation_stepper
 from Gui_style import (
-    PRIMARY_RED,
     BACKGROUND,
     TEXT_COLOR,
     BUTTON_BG,
@@ -15,18 +13,10 @@ from Gui_style import (
     BUTTON_ACTIVE_FG,
     STATUS_FONT,
     BUTTON_FONT,
-    BUTTON_RADIUS
 )
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 RECIPES_DIR = SCRIPT_DIR / "Rezepte"
-
-# optional: Homing direkt beim Start
-# try:
-#     initialisation_stepper.home_stepper()
-# except Exception as exc:
-#     print(f"Homing fehlgeschlagen: {exc}")
-#     sys.exit(1)
 
 current_thread = None
 SKIP_HOMING_AFTER = os.getenv("SKIP_HOMING_AFTER", "0") == "1"
@@ -70,8 +60,8 @@ def start_recipe(file_path: Path):
 
     name = file_path.stem.replace("Rezept_", "")
     status_label.config(text=f"{name} wird zubereitet...")
+    status_label.update_idletasks()  # sofort anzeigen
     set_buttons_state("disabled")
-    print(f"Starte: {file_path}")
 
     if file_path.suffix == ".py":
         cmd = ["python3", str(file_path)]
@@ -98,11 +88,10 @@ root.configure(bg=BACKGROUND)
 frame = tk.Frame(root, bg=BACKGROUND)
 frame.pack(expand=True, fill="both", padx=40, pady=40)
 
-status_label = tk.Label(root, text="", font=STATUS_FONT, fg=TEXT_COLOR, bg=BACKGROUND)
+status_label = tk.Label(root, text="Bitte Rezept wählen.", font=STATUS_FONT, fg=TEXT_COLOR, bg=BACKGROUND)
 status_label.pack(pady=20)
 
 files = sorted(f for f in RECIPES_DIR.iterdir() if f.is_file()) if RECIPES_DIR.exists() else []
-
 if not files:
     tk.Label(frame, text="Keine Rezeptdateien gefunden.", font=("Arial", 32)).pack()
 else:
