@@ -23,11 +23,11 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 RECIPES_DIR = SCRIPT_DIR / "Rezepte"
 
 # Homing des Steppers ausführen, bevor GUI startet
-try:
-    initialisation_stepper.home_stepper()
-except Exception as exc:
-    print(f"Homing fehlgeschlagen: {exc}")
-    sys.exit(1)
+# try:
+#     initialisation_stepper.home_stepper()
+# except Exception as exc:
+#     print(f"Homing fehlgeschlagen: {exc}")
+#     sys.exit(1)
 
 current_thread = None  # merkt laufendes Rezept oder Homing
 
