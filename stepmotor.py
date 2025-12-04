@@ -18,6 +18,8 @@ print("Starte Motorbewegung...")
 
 try:
     # Vorwärts
+    GPIO.output(DIR, GPIO.HIGH)
+    print("Vorwärts")
     for _ in range(steps):
         GPIO.output(STEP, GPIO.HIGH)
         time.sleep(delay)
@@ -29,6 +31,7 @@ try:
 
     # Rückwärts
     GPIO.output(DIR, GPIO.LOW)
+    print("turn around")
 
     for _ in range(steps):
         GPIO.output(STEP, GPIO.HIGH)
