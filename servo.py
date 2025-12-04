@@ -1,7 +1,7 @@
 import RPi.GPIO as GPIO
 import time
 
-servo_pin = 18  # <-- dein Anschluss
+servo_pin = 13  # <-- dein Anschluss
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(servo_pin, GPIO.OUT)
@@ -18,7 +18,7 @@ def set_angle(angle):
 
 try:
     while True:
-        for angle in [0, 90, 180, 90]:
+        for angle in [0, 30, 0, 60]:
             print(f"Stelle Servo auf {angle}°")
             set_angle(angle)
             time.sleep(1)
