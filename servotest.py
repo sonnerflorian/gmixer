@@ -11,7 +11,7 @@ pwm = GPIO.PWM(SERVO_PIN, 50)
 pwm.start(0)
 
 # Diese Werte kannst du ggf. anpassen:
-MIN_DUTY = 7.0   # ca. 0°   (falls zu weit links/rechts -> leicht ändern)
+MIN_DUTY = 3.0   # ca. 0°   (falls zu weit links/rechts -> leicht ändern)
 MAX_DUTY = 11.0  # ca. 180°
 
 def angle_to_duty(angle):
@@ -31,7 +31,7 @@ try:
     set_angle(0)
 
     print("Auf 10°")
-    set_angle(10)
+    set_angle(20)
 
     time.sleep(1)
 
