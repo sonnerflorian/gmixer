@@ -1,73 +1,30 @@
-#!/usr/bin/env python
-
-# servo_demo.py
-# 2016-10-07
-# Public Domain
-
-# servo_demo.py          # Send servo pulses to GPIO 4.
-# servo_demo.py 23 24 25 # Send servo pulses to GPIO 23, 24, 25.
-
-import sys
-import time
-import random
 import pigpio
+import time
 
-NUM_GPIO=13
+SERVO_PIN = 13
 
-MIN_WIDTH=1000
-MAX_WIDTH=2000
-
-step = [0]*NUM_GPIO
-width = [0]*NUM_GPIO
-used = [False]*NUM_GPIO
-
-pi = pigpio.pi()
-
+pi = pigpio.pi()      # Verbindung zum pigpiod-Daemon
 if not pi.connected:
-   exit()
+    exit()
 
-if len(sys.argv) == 1:
-   G = [4]
-else:
-   G = []
-   for a in sys.argv[1:]:
-      G.append(int(a))
-   
-for g in G:
-   used[g] = True
-   step[g] = random.randrange(5, 25)
-   if step[g] % 2 == 0:
-      step[g] = -step[g]
-   width[g] = random.randrange(MIN_WIDTH, MAX_WIDTH+1)
+def set_angle(angle):
+    # Winkel -> Pulsweite (µs)
+    pulse = 500 + (angle / 180.0) * 2000   # 500–2500 µs
+    pi.set_servo_pulsewidth(SERVO_PIN, pulse)
 
-print("Sending servos pulses to GPIO {}, control C to stop.".
-   format(' '.join(str(g) for g in G)))
+try:
+    print("0°")
+    set_angle(0)
+    time.sleep(1)
 
-while True:
+    print("10°")
+    set_angle(10)
+    time.sleep(1)
 
-   try:
+    print("Zurück 0°")
+    set_angle(0)
+    time.sleep(1)
 
-      for g in G:
-
-         pi.set_servo_pulsewidth(g, width[g])
-
-         # print(g, width[g])
-
-         width[g] += step[g]
-
-         if width[g]<MIN_WIDTH or width[g]>MAX_WIDTH:
-            step[g] = -step[g]
-            width[g] += step[g]
-
-      time.sleep(0.1)
-
-   except KeyboardInterrupt:
-      break
-
-print("\nTidying up")
-
-for g in G:
-   pi.set_servo_pulsewidth(g, 0)
-
-pi.stop()
-
+finally:
+    pi.set_servo_pulsewidth(SERVO_PIN, 0)  # Servo aus
+    pi.stop()
