@@ -1,17 +1,17 @@
-from gpiozero import Servo
+from gpiozero import AngularServo
 import time
 
-servo = Servo(13, min_pulse_width=0.0005, max_pulse_width=0.0025)
+servo = AngularServo(13, min_pulse_width=0.0006, max_pulse_width=0.0023)
 
 while True:
     print("Stelle Servo auf -1 (0°)")
-    servo.value = -1
+    servo.angle = 90
     time.sleep(2)
 
     print("Stelle Servo auf 1 (180°)")
-    servo.value = 0
+    servo.angle = 0
     time.sleep(2)
 
     print("Stelle Servo auf -1 (0°)")
-    servo.value = 1
+    servo.angke = -90
     time.sleep(2)
