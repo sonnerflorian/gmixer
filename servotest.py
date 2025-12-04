@@ -1,26 +1,33 @@
 import RPi.GPIO as GPIO
 import time
 
-servoPIN = 13
+SERVO_PIN = 13   # GPIO13
+
 GPIO.setmode(GPIO.BCM)
-GPIO.setup(servoPIN, GPIO.OUT)
+GPIO.setup(SERVO_PIN, GPIO.OUT)
 
+# PWM mit 50 Hz erzeugen
+pwm = GPIO.PWM(SERVO_PIN, 50)
+pwm.start(0)
 
-def set_angle(pwm, angle, settle=0.4):
-  # 0° ≈ 2%, 180° ≈ 12% (Faustregel)
-  duty = max(2, min(12, 2 + angle / 18))
-  pwm.ChangeDutyCycle(duty)
-  time.sleep(settle)
-  pwm.ChangeDutyCycle(0)
+def set_angle(angle):
+    # Umrechnung: 0° = ca. 2.5% Duty, 180° = ca. 12.5%
+    duty = 2.5 + (angle / 180.0) * 10
+    pwm.ChangeDutyCycle(duty)
+    time.sleep(0.3)  # kurze Zeit, damit der Servo ankommt
 
+try:
+    print("Fahre auf 0° …")
+    set_angle(0)
 
-p = GPIO.PWM(servoPIN, 50) # GPIO 17 als PWM mit 50Hz
-p.start(0) # Initialisierung
+    print("Fahre auf 10° …")
+    set_angle(10)
 
-set_angle(p, 10)
-time.sleep(1)
-set_angle(p, 0)
-# set_angle(p, 10)
-# time.sleep(0.5)
-GPIO.cleanup()
+    time.sleep(1)
 
+    print("Zurück auf 0° …")
+    set_angle(0)
+
+finally:
+    pwm.stop()
+    GPIO.cleanup()
