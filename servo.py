@@ -18,7 +18,7 @@ def set_angle(angle):
 
 try:
     while True:
-        for angle in [0, 30, 0, 60]:
+        for angle in [0]:
             print(f"Stelle Servo auf {angle}°")
             set_angle(angle)
             time.sleep(1)
