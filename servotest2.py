@@ -13,5 +13,5 @@ while True:
     time.sleep(2)
 
     print("Stelle Servo auf -1 (0°)")
-    servo.value = -1
+    servo.value = 1
     time.sleep(2)
