@@ -20,7 +20,7 @@ try:
   while True:
     set_angle(p, 0)
     time.sleep(0.5)
-    set_angle(p, 20)
+    set_angle(p, 10)
     time.sleep(0.5)
 except KeyboardInterrupt:
   p.stop()
