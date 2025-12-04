@@ -30,6 +30,8 @@ try:
     print("Auf 0°")
     set_angle(0)
 
+    time.sleep(1)
+
     print("Auf 10°")
     set_angle(20)
 
