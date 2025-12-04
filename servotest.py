@@ -17,7 +17,7 @@ def set_angle(pwm, angle, settle=0.4):
 p = GPIO.PWM(servoPIN, 50) # GPIO 17 als PWM mit 50Hz
 p.start(0) # Initialisierung
 
-set_angle(p, 20)
+set_angle(p, 10)
 time.sleep(1)
 set_angle(p, 0)
 # set_angle(p, 10)
