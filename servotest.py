@@ -1,7 +1,7 @@
 import RPi.GPIO as GPIO
 import time
 
-SERVO_PIN = 13  # GPIO13
+SERVO_PIN = 6  # GPIO13
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(SERVO_PIN, GPIO.OUT)
@@ -11,7 +11,7 @@ pwm = GPIO.PWM(SERVO_PIN, 50)
 pwm.start(0)
 
 # Diese Werte kannst du ggf. anpassen:
-MIN_DUTY = 3.0   # ca. 0°   (falls zu weit links/rechts -> leicht ändern)
+MIN_DUTY = 7.0   # ca. 0°   (falls zu weit links/rechts -> leicht ändern)
 MAX_DUTY = 11.0  # ca. 180°
 
 def angle_to_duty(angle):
