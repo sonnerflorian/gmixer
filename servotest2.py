@@ -13,5 +13,5 @@ while True:
     time.sleep(2)
 
     print("Stelle Servo auf -1 (0°)")
-    servo.angke = -90
+    servo.angle = -90
     time.sleep(2)
