@@ -16,13 +16,11 @@ def set_angle(pwm, angle, settle=0.4):
 
 p = GPIO.PWM(servoPIN, 50) # GPIO 17 als PWM mit 50Hz
 p.start(2.5) # Initialisierung
-try:
-  while True:
-    set_angle(p, 0)
-    time.sleep(0.5)
-    set_angle(p, 10)
-    time.sleep(0.5)
-except KeyboardInterrupt:
-  p.stop()
-  GPIO.cleanup()
+
+set_angle(p, 0)
+time.sleep(0.5)
+set_angle(p, 10)
+time.sleep(0.5)
+
+GPIO.cleanup()
 
