@@ -1,7 +1,7 @@
 import RPi.GPIO as GPIO
 import time
 
-SERVO_PIN = 13   # BCM-Nummer
+SERVO_PIN = 16   # BCM-Nummer
 FREQ = 50        # Hz, typisch für Servos
 
 GPIO.setmode(GPIO.BCM)
