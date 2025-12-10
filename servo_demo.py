@@ -25,6 +25,8 @@ def set_angle(angle):
     # Ändere den Duty Cycle des PWM-Signals
     pwm.ChangeDutyCycle(duty_cycle)
     time.sleep(0.5) # Warte, bis der Servo die Position erreicht hat
+    pwm.ChangeDutyCycle(0) # Setze den Duty Cycle zurück, um Rauschen zu vermeiden
+
 
 # 4. Hauptprogramm
 try:
