@@ -27,10 +27,10 @@ def set_angle(angle):
     time.sleep(0.5) # Warte, bis der Servo die Position erreicht hat
     pwm.ChangeDutyCycle(0) # Setze den Duty Cycle zurück, um Rauschen zu vermeiden
 
-
+counter = 0
 # 4. Hauptprogramm
 try:
-    while True:
+    while counter <= 1:   
         print("Setze Winkel auf 0 Grad")
         set_angle(0)
         time.sleep(1)
@@ -38,10 +38,12 @@ try:
         print("Setze Winkel auf 90 Grad")
         set_angle(90)
         time.sleep(1)
+        counter += 1
         
-        print("Setze Winkel auf 180 Grad")
-        set_angle(180)
-        time.sleep(1)
+    print("Programm beendet.")
+    pwm.stop()      # Stoppe PWM
+    GPIO.cleanup()  # Setze die GPIO-Pins zurück
+
 
 # Beende das Programm sauber bei Tastendruck (Ctrl+C)
 except KeyboardInterrupt:
