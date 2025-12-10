@@ -2,7 +2,7 @@ import RPi.GPIO as GPIO
 import time
 
 # 1. Konfiguration
-servo_pin = 18 # Wähle den GPIO-Pin, an den das orange/gelbe Kabel angeschlossen ist
+servo_pin = 16 # Wähle den GPIO-Pin, an den das orange/gelbe Kabel angeschlossen ist
 GPIO.setmode(GPIO.BCM) # Verwende die BCM-Nummerierung (nicht die Pin-Nummer)
 GPIO.setup(servo_pin, GPIO.OUT)
 
