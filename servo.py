@@ -10,12 +10,12 @@ GPIO.setup(SERVO_PIN, GPIO.OUT)
 pwm = GPIO.PWM(SERVO_PIN, FREQ)
 pwm.start(0)
 
-def set_angle(angle: float, settle: float = 0.4):
+def set_angle(angle: float, settle: float = 1.0): # <- Hier 1.0 Sekunden setzen
     # Duty-Cycle grob: 0° ≈ 2%, 180° ≈ 12%
     duty = max(2, min(12, 2 + angle / 18))
     pwm.ChangeDutyCycle(duty)
     time.sleep(settle)
-    pwm.ChangeDutyCycle(0)
+    pwm.ChangeDutyCycle(0) # Kann hier bleiben, wenn du den Strom sparen willst
 
 try:
     current = 5
