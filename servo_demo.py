@@ -30,13 +30,17 @@ def set_angle(angle):
 counter = 0
 # 4. Hauptprogramm
 try:
-    while counter <= 1:   
+    while counter < 1:   
         print("Setze Winkel auf 0 Grad")
         set_angle(0)
         time.sleep(1)
         
         print("Setze Winkel auf 90 Grad")
         set_angle(90)
+        time.sleep(1)
+
+        print("Setze Winkel auf 0 Grad")
+        set_angle(0)
         time.sleep(1)
         counter += 1
         
