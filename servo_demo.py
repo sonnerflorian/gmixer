@@ -1,30 +1,48 @@
-import pigpio
+import RPi.GPIO as GPIO
 import time
 
-SERVO_PIN = 13
+# 1. Konfiguration
+servo_pin = 18 # Wähle den GPIO-Pin, an den das orange/gelbe Kabel angeschlossen ist
+GPIO.setmode(GPIO.BCM) # Verwende die BCM-Nummerierung (nicht die Pin-Nummer)
+GPIO.setup(servo_pin, GPIO.OUT)
 
-pi = pigpio.pi()      # Verbindung zum pigpiod-Daemon
-if not pi.connected:
-    exit()
+# 2. PWM-Einrichtung
+# Servos benötigen eine Frequenz von typischerweise 50 Hz (50 Zyklen pro Sekunde)
+pwm = GPIO.PWM(servo_pin, 50) 
+pwm.start(0) # Starte PWM mit einem Tastverhältnis (Duty Cycle) von 0%
 
+# 3. Funktion zur Winkelsteuerung
 def set_angle(angle):
-    # Winkel -> Pulsweite (µs)
-    pulse = 500 + (angle / 180.0) * 2000   # 500–2500 µs
-    pi.set_servo_pulsewidth(SERVO_PIN, pulse)
+    # Die Position des Servos wird durch den "Duty Cycle" (Tastverhältnis) bestimmt.
+    # Ein typischer Servo benötigt:
+    # 0 Grad: Duty Cycle von ca. 2.5 % (Pulsweite von 0.5 ms)
+    # 90 Grad: Duty Cycle von ca. 7.5 % (Pulsweite von 1.5 ms)
+    # 180 Grad: Duty Cycle von ca. 12.5 % (Pulsweite von 2.5 ms)
+    
+    # Berechne den Duty Cycle: DC = (angle / 18) + 2.5
+    duty_cycle = (angle / 18.0) + 2.5
+    
+    # Ändere den Duty Cycle des PWM-Signals
+    pwm.ChangeDutyCycle(duty_cycle)
+    time.sleep(0.5) # Warte, bis der Servo die Position erreicht hat
 
+# 4. Hauptprogramm
 try:
-    print("0°")
-    set_angle(0)
-    time.sleep(1)
+    while True:
+        print("Setze Winkel auf 0 Grad")
+        set_angle(0)
+        time.sleep(1)
+        
+        print("Setze Winkel auf 90 Grad")
+        set_angle(90)
+        time.sleep(1)
+        
+        print("Setze Winkel auf 180 Grad")
+        set_angle(180)
+        time.sleep(1)
 
-    print("10°")
-    set_angle(10)
-    time.sleep(1)
-
-    print("Zurück 0°")
-    set_angle(0)
-    time.sleep(1)
-
-finally:
-    pi.set_servo_pulsewidth(SERVO_PIN, 0)  # Servo aus
-    pi.stop()
+# Beende das Programm sauber bei Tastendruck (Ctrl+C)
+except KeyboardInterrupt:
+    print("Programm beendet.")
+    pwm.stop()      # Stoppe PWM
+    GPIO.cleanup()  # Setze die GPIO-Pins zurück
