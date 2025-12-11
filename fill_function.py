@@ -143,7 +143,7 @@ def move_to_drink(drink_name: str):
     
     _setup_driver() 
     try:
-        move_to_position(DRINK_POSITIONS[drink_name])
+        move_to_position(-DRINK_POSITIONS[drink_name])
     finally:
         pass 
 
