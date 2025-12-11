@@ -19,7 +19,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 RECIPES_DIR = SCRIPT_DIR / "Rezepte"
 
 current_thread = None
-SKIP_HOMING_AFTER = 1 #os.getenv("SKIP_HOMING_AFTER", "0") == "1"
+SKIP_HOMING_AFTER = False #os.getenv("SKIP_HOMING_AFTER", "0") == "1"
 
 def set_buttons_state(state: str):
     for widget in frame.winfo_children():
