@@ -17,7 +17,7 @@ BUTTON_PIN = 2 # GPIO 2 hat festen Pull-Up
 STEPPER_FORWARD = True      # Richtung weg von Home/zum Endschalter
 STEPPER_BACKWARD = False    # Richtung zu Home/vom Endschalter
 STEP_DELAY = 0.001          # Ziel-Geschwindigkeit (1 ms)
-WAITING_STEPS = 2400        # Schritte von Home entfernt
+WAITING_STEPS = 2500        # Schritte von Home entfernt
 
 # --- 2. GLOBALE GERÄTE VARIABLEN ---
 _factory = None
