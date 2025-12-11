@@ -1,56 +1,67 @@
-import RPi.GPIO as GPIO
 import time
+from gpiozero import Servo
+from gpiozero.pins.pigpio import PiGPIOFactory 
 
-# 1. Konfiguration
-servo_pin = 26 # Wähle den GPIO-Pin, an den das orange/gelbe Kabel angeschlossen ist
-GPIO.setmode(GPIO.BCM) # Verwende die BCM-Nummerierung (nicht die Pin-Nummer)
-GPIO.setup(servo_pin, GPIO.OUT)
+# --- KONFIGURATION ---
+SERVO_PIN = 26       # BCM-Pin-Nummer (Ihr funktionierender Pin)
+TEST_CYCLES = 3      # Wie oft soll der Servo fahren
 
-# 2. PWM-Einrichtung
-# Servos benötigen eine Frequenz von typischerweise 50 Hz (50 Zyklen pro Sekunde)
-pwm = GPIO.PWM(servo_pin, 50) 
-pwm.start(0) # Starte PWM mit einem Tastverhältnis (Duty Cycle) von 0%
+# Aggressive Pulsweiten für maximale Reichweite (0.45ms bis 2.55ms)
+MIN_PULSE = 0.00045  
+MAX_PULSE = 0.00255  
 
-# 3. Funktion zur Winkelsteuerung
-def set_angle(angle):
-    # Die Position des Servos wird durch den "Duty Cycle" (Tastverhältnis) bestimmt.
-    # Ein typischer Servo benötigt:
-    # 0 Grad: Duty Cycle von ca. 2.5 % (Pulsweite von 0.5 ms)
-    # 90 Grad: Duty Cycle von ca. 7.5 % (Pulsweite von 1.5 ms)
-    # 180 Grad: Duty Cycle von ca. 12.5 % (Pulsweite von 2.5 ms)
+# -----------------------------------
+# --- HAUPTPROGRAMM ---
+# -----------------------------------
+
+def test_servo():
+    print(f"Starte Servo-Test auf GPIO {SERVO_PIN}...")
     
-    # Berechne den Duty Cycle: DC = (angle / 18) + 2.5
-    duty_cycle = (angle / 18.0) + 2.5
-    
-    # Ändere den Duty Cycle des PWM-Signals
-    pwm.ChangeDutyCycle(duty_cycle)
-    time.sleep(0.5) # Warte, bis der Servo die Position erreicht hat
-    pwm.ChangeDutyCycle(0) # Setze den Duty Cycle zurück, um Rauschen zu vermeiden
+    # Sicherstellen, dass der pigpiod Daemon läuft!
+    try:
+        factory = PiGPIOFactory()
+    except Exception as e:
+        print("FEHLER: PiGPIOFactory konnte nicht gestartet werden.")
+        print("Stellen Sie sicher, dass der 'pigpiod' Daemon läuft. (sudo systemctl start pigpiod)")
+        return
 
-counter = 0
-# 4. Hauptprogramm
-try:
-    while counter < 1:   
-        print("Setze Winkel auf 0 Grad")
-        set_angle(0)
-        time.sleep(1)
+    servo = None
+    try:
+        # Initialisiere den Servo mit der Factory und den aggressiven Pulsweiten
+        servo = Servo(SERVO_PIN, 
+                      min_pulse_width=MIN_PULSE, 
+                      max_pulse_width=MAX_PULSE, 
+                      pin_factory=factory) 
         
-        print("Setze Winkel auf 90 Grad")
-        set_angle(90)
-        time.sleep(1)
+        print(f"Servo initialisiert. Starte {TEST_CYCLES} Zyklen.")
 
-        print("Setze Winkel auf 0 Grad")
-        set_angle(0)
-        time.sleep(1)
-        counter += 1
+        for i in range(TEST_CYCLES):
+            print(f"--- Durchlauf {i+1} ---")
+            
+            # 1. Maximale Öffnung (+1.0 entspricht 180 Grad)
+            print("Setze auf MAX (180 Grad / +1.0)")
+            servo.max() 
+            time.sleep(1.5)
+            
+            # 2. Minimale Öffnung (-1.0 entspricht 0 Grad)
+            print("Setze auf MIN (0 Grad / -1.0)")
+            servo.min() 
+            time.sleep(1.5)
+
+        print("\nTest beendet.")
+
+    except Exception as e:
+        print(f"\nEIN FEHLER IST AUFGETRETEN: {e}")
         
-    print("Programm beendet.")
-    pwm.stop()      # Stoppe PWM
-    GPIO.cleanup()  # Setze die GPIO-Pins zurück
+    finally:
+        # Sauberes Aufräumen
+        if servo is not None:
+            servo.detach() # Stoppt das PWM-Signal
+            servo.close()
+        
+        # Da wir die Factory nur für diesen Test gestartet haben, 
+        # muss sie nicht global geschlossen werden.
 
 
-# Beende das Programm sauber bei Tastendruck (Ctrl+C)
-except KeyboardInterrupt:
-    print("Programm beendet.")
-    pwm.stop()      # Stoppe PWM
-    GPIO.cleanup()  # Setze die GPIO-Pins zurück
+if __name__ == "__main__":
+    test_servo()
