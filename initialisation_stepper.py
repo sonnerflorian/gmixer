@@ -8,7 +8,7 @@ import fill_function as fill
 import hardware_config as cfg
 
 # --- Globale Konstanten ---
-WAITING_STEPS = 2400 # 8 * 300 Schritte
+WAITING_STEPS = 2500 # 8 * 300 Schritte
 
 # Globale Variable für Button und Factory
 _button = None
