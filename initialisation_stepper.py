@@ -88,15 +88,24 @@ def _ramp_move_until_pressed():
     # Endlosschleife
     while not _button.is_pressed:
         
-        fill._raw_step(current_delay) # Nutzt die neue Roh-Schrittfunktion aus fill_function
+        fill._raw_step(current_delay) 
         
         # Beschleunigung
         if current_delay > TARGET_DELAY:
             current_delay *= ACCEL_RATE 
             current_delay = max(current_delay, TARGET_DELAY) 
 
-    # Ende
+    # Ende der Homing-Fahrt
     print("\n\n*** HOME-POSITION ERREICHT (Position 0) ***")
+
+    # Backlash-Kompensation (5 Schritte in die Gegenrichtung)
+    print("-> Führe Backlash-Kompensation aus.")
+    
+    fill._dir_pin.value = cfg.STEPPER_FORWARD # Richtung WEG vom Endschalter setzen
+    # Langsame Schritte, um sicherzustellen, dass sich der Motor bewegt
+    for _ in range(5): 
+        fill._raw_step(0.005) 
+    
     fill._en_pin.on()
     time.sleep(0.1)
 
