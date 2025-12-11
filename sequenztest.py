@@ -13,7 +13,7 @@ DELAY = 0.002 # Verzögerung zwischen Pulsen (in Sekunden)
 STEPS_PER_REVOLUTION = 200 # Schritte für 1 volle Umdrehung
 
 # Servo Pins (Liste der 8 GPIO-Pins)
-SERVO_PINS = [26, 19, 13, 6, 5, 17, 27, 22]
+SERVO_PINS = [26, 19, 13, 6, 5, 10, 27, 22]
 
 # -----------------------------------
 # --- 2. GERÄTE-SETUP ---
