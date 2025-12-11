@@ -102,6 +102,7 @@ try:
     while counter > 8:    
         move_stepper(STEPS_PER_REVOLUTION, False) # 200 Schritte rückwärts
         counter += 1
+        print(counter)
 
     print("\n" + "="*40)
     print("SEQUENZ ABGESCHLOSSEN.")
