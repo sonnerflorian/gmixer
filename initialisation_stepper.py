@@ -1,57 +1,94 @@
 import time
-import RPi.GPIO as GPIO
-import hardware_config as cfg
-import fill_function as fill
+from gpiozero import OutputDevice, Button
+from gpiozero.pins.pigpio import PiGPIOFactory 
+import sys
 
-BACKOFF_STEPS = 50          # kurz vom Schalter weg
-RECIPE_START_STEPS = 500    # zum Rezept-Startpunkt
-TIMEOUT_SEC = 15
+# --- 1. GLOBALE KONFIGURATION ---
 
-def _pull():
-    return GPIO.PUD_UP if cfg.SWITCH_PULL.upper() == "UP" else GPIO.PUD_DOWN
+# Steppermotor Pins (A4988-Treiber)
+STEP_PIN = 16 
+DIR_PIN = 20
+ENABLE_PIN = 21
+DELAY = 0.005 # Geschwindigkeit des Steppers während der Initialisierung
+STEPS = 1 # Wir bewegen den Stepper Schritt für Schritt
 
-def _step_once(step_pin):
-    GPIO.output(step_pin, GPIO.HIGH)
-    time.sleep(cfg.STEP_DELAY)
-    GPIO.output(step_pin, GPIO.LOW)
-    time.sleep(cfg.STEP_DELAY)
+# Taster-Pin (Endschalter)
+BUTTON_PIN = 2 
 
-def home_stepper():
-    pins = cfg.STEPPER_PINS
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setup(pins["DIR"], GPIO.OUT)
-    GPIO.setup(pins["STEP"], GPIO.OUT)
-    GPIO.setup(pins["EN"], GPIO.OUT)
-    GPIO.setup(cfg.SWITCH_PIN, GPIO.IN, pull_up_down=_pull())
+# -----------------------------------
+# --- 2. GERÄTE-SETUP ---
+# -----------------------------------
 
-    GPIO.output(pins["EN"], GPIO.LOW)
-    GPIO.output(pins["DIR"], cfg.STEPPER_FORWARD)
+try:
+    # Starte die pigpio Factory (Voraussetzung: pigpiod läuft)
+    factory = PiGPIOFactory()
 
-    start = time.time()
-    try:
-        while time.time() - start < TIMEOUT_SEC:
-            if GPIO.input(cfg.SWITCH_PIN) == cfg.SWITCH_ACTIVE_STATE:
-                break
-            _step_once(pins["STEP"])
-        else:
-            raise RuntimeError("Homing-Timeout: Schalter nicht erreicht")
+    # Stepper-Geräte initialisieren
+    dir_pin = OutputDevice(DIR_PIN, pin_factory=factory)
+    enable_pin = OutputDevice(ENABLE_PIN, pin_factory=factory)
+    step_pin = OutputDevice(STEP_PIN, pin_factory=factory) 
 
-        # kleiner Backoff
-        GPIO.output(pins["DIR"], cfg.STEPPER_BACKWARD)
-        for _ in range(BACKOFF_STEPS):
-            _step_once(pins["STEP"])
+    # Taster initialisieren (mit Pull-Down-Widerstand)
+    # Wenn der Schalter 3.3V mit GPIO 2 verbindet, nutzen wir pull_up=False
+    button = Button(BUTTON_PIN, pull_up=False, pin_factory=factory) 
+    
+    # Stepper am Anfang deaktivieren
+    enable_pin.on() 
+    print("Initialisierung abgeschlossen. Start bereit.")
 
-        # zum Rezept-Startpunkt fahren
-        for _ in range(RECIPE_START_STEPS):
-            _step_once(pins["STEP"])
+except Exception as e:
+    print(f"Fehler bei der Initialisierung: {e}")
+    print("Stellen Sie sicher, dass der pigpiod Daemon läuft!")
+    sys.exit(1)
 
-        # Startpunkt setzen
-        fill.set_current_position(0)
-        return True
-    finally:
-        GPIO.output(pins["EN"], GPIO.HIGH)
-        GPIO.cleanup()
 
-if __name__ == "__main__":
-    if home_stepper():
-        print("Homing + Startpunkt abgeschlossen.")
+# -----------------------------------
+# --- 3. INITIALISIERUNGS-ROUTINE ---
+# -----------------------------------
+
+def find_home_position():
+    """Bewegt den Stepper langsam in Richtung False, bis der Taster gedrückt wird."""
+    
+    # 1. Prüfe, ob der Taster bereits gedrückt ist
+    if button.is_pressed:
+        print("Taster ist bereits geschlossen. Home-Position gefunden.")
+        return
+        
+    print("\n--- STARTE HOME-SUCHE (Richtung: FALSE) ---")
+    
+    # 2. Motor aktivieren und Richtung setzen
+    enable_pin.off()
+    dir_pin.off() # Setze Richtung auf FALSE
+    
+    # Endlosschleife, die bei jedem Schritt den Zustand des Tasters prüft
+    while not button.is_pressed:
+        
+        # Sende einen Schritt
+        step_pin.on() 
+        time.sleep(DELAY) # Wichtig für die Geschwindigkeit
+        step_pin.off()
+        time.sleep(DELAY)
+        
+        # Optional: Statusmeldung, um zu sehen, dass das Skript läuft
+        # if int(time.time() * 10) % 10 == 0:
+        #    print(".", end="", flush=True) # Zeigt Aktivität
+        
+    # 3. Wenn die Schleife beendet wird, wurde der Taster gedrückt
+    print("\n\n*** HOME-POSITION ERREICHT! ***")
+
+# -----------------------------------
+# --- 4. HAUPTPROGRAMM ---
+# -----------------------------------
+
+try:
+    find_home_position()
+
+except KeyboardInterrupt:
+    print("\nRoutine gestoppt durch Benutzer (Strg+C).")
+
+finally:
+    # 5. AUFRÄUMEN
+    print("Führe Cleanup aus.")
+    # Stepper deaktivieren (wichtig, sonst hält er die Position)
+    enable_pin.on()
+    # gpiozero schließt die Geräte automatisch
