@@ -8,7 +8,7 @@ from gpiozero.pins.pigpio import PiGPIOFactory
 STEP_PIN = 16 
 DIR_PIN = 20
 ENABLE_PIN = 21
-DELAY = 0.005 # Verzögerung zwischen Pulsen (in Sekunden)
+DELAY = 0.0005 # Verzögerung zwischen Pulsen (in Sekunden)
 STEPS = 1200
 
 SERVO_PINS = [26, 19, 13, 6, 5, 10, 27, 22]
