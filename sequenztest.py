@@ -11,7 +11,7 @@ DELAY = 0.002 # Verzögerung für den Stepper (sollte Ruckeln minimieren)
 STEPS_PER_REVOLUTION = 200 # Schritte für 1 volle Umdrehung
 
 # Servo Pins (Liste der 8 GPIO-Pins)
-SERVO_PINS = [26, 19, 13, 6, 5, 11, 9, 10]
+SERVO_PINS = [26, 19, 13, 6, 5, 17, 27, 22]
 FREQ = 50  # PWM-Frequenz für Servos (50 Hz)
 
 # -----------------------------------
