@@ -8,7 +8,7 @@ ENABLE_PIN = 21
 
 # Schrittfrequenz: Wartezeit zwischen Pulsen in Sekunden.
 # Kleinere Zahl = höhere Geschwindigkeit. 0.001s ist ein guter Start.
-DELAY = 0.001 
+DELAY = 0.01 
 
 # Anzahl der Schritte für eine volle Umdrehung (meistens 200 bei Vollschritt-Modus)
 STEPS_PER_REVOLUTION = 200
@@ -51,7 +51,7 @@ try:
     # 200 Schritte vorwärts (1 Umdrehung)
     move_stepper(STEPS_PER_REVOLUTION, True)
     print("Bewegung 1 abgeschlossen. Warte 2 Sekunden...")
-    time.sleep(2)
+    time.sleep(5)
     
     # 200 Schritte rückwärts (1 Umdrehung)
     move_stepper(STEPS_PER_REVOLUTION, False)
