@@ -148,14 +148,22 @@ def move_to_drink(drink_name: str):
         pass 
 
 def pour_with_servo(servo_pin: int, forward_angle: float = 180, dwell: float = 0.5):
-    """Steuert das Servo-Ventil mit Standard-gpiozero-Einstellungen."""
+    """Steuert das Servo-Ventil. Stellt sicher, dass der Stepper deaktiviert ist."""
     
     _setup_driver()
-    _silence_all_servos() # NEU: Sicherstellen, dass alle anderen Servos still sind!
+    
+    # 1. Hocheffektive Software-Trennung des Steppers
+    global _en_pin
+    if _en_pin is not None:
+        if _en_pin.value == False: # Wenn der Stepper aktiv ist (LOW)
+            _en_pin.on()           # Stepper deaktivieren (HIGH)
+            time.sleep(0.01)       # 10ms warten, damit die Ströme abfließen (wichtig!)
+            
+    _silence_all_servos() # Stellt sicher, dass alle anderen Servos still sind
     servo = None
     
     try:
-        # Initialisiere nur den aktiven Servo
+        # 2. Servo-Aktivierung und Betrieb
         servo = Servo(servo_pin, pin_factory=_factory) 
         
         # Servo öffnen
@@ -175,4 +183,7 @@ def pour_with_servo(servo_pin: int, forward_angle: float = 180, dwell: float = 0
         # Sauberes Aufräumen des aktiven Servos
         if servo is not None:
             servo.detach() 
-            servo.close()
+            servo.close() 
+            
+    # HINWEIS: Der Stepper bleibt deaktiviert. 
+    # Er wird erst durch die nächste move_steps-Funktion (im Rezept) wieder aktiviert.
