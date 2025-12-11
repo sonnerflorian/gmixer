@@ -20,7 +20,7 @@ SWITCH_ACTIVE_STATE = False
 SERVO_PINS = {
     "Apfelsaft": 26,
     "Wasser": 19,
-    "Johannisbeere": 27,
+    "Johannisbeere": 13,
     # "Getränk4": 23,
     # "Getränk5": 18,
     # "Getränk6": 22,
