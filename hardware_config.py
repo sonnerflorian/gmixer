@@ -29,9 +29,10 @@ SERVO_PINS = {
 }
 
 DRINK_POSITIONS = {
-    "Apfelsaft": 0,
-    "Wasser": 800,
-    "Johannisbeere": 1600,
+    "start": 0,
+    "Apfelsaft": 400,
+    "Wasser": 700,
+    "Johannisbeere": 1000,
     # "Getränk4": 1200,
     # "Getränk5": 2000,
     # "Getränk6": 2400,

@@ -25,7 +25,7 @@ def main():
     time.sleep(0.5)
 
     # 3. Zurück zur Warteposition (2400 Schritte)
-    fill.move_to_position(2400) 
+    fill.move_to_drink("start") 
 
 if __name__ == "__main__":
     main()
