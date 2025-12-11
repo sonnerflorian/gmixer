@@ -119,20 +119,35 @@ def _silence_all_servos():
     
 
 def move_steps(delta_steps: int):
-    # ... (Rest der move_steps Funktion bleibt gleich) ...
-    global current_position
+    """
+    Bewegt den Stepper um eine bestimmte Anzahl von Schritten (delta_steps).
+    Aktiviert den Treiber vor der Bewegung und deaktiviert ihn danach.
+    """
+    global current_position, _en_pin
+    
     if delta_steps == 0:
         return
         
     _setup_driver() 
-        
-    direction = cfg.STEPPER_FORWARD if delta_steps > 0 else cfg.STEPPER_BACKWARD
-    _dir_pin.value = direction 
     
-    for _ in range(abs(delta_steps)):
-        _step_once()
+    try:
+        # NEU: Stepper-Treiber reaktivieren
+        if _en_pin is not None:
+            _en_pin.off() # Stepper aktivieren (LOW)
+            time.sleep(0.005) # Kurze Pause zur Stabilisierung
+            
+        direction = cfg.STEPPER_FORWARD if delta_steps > 0 else cfg.STEPPER_BACKWARD
+        _dir_pin.value = direction 
         
-    current_position += delta_steps
+        for _ in range(abs(delta_steps)):
+            _step_once()
+            
+        current_position += delta_steps
+        
+    finally:
+        # NEU: Stepper deaktivieren (für Stabilität, Strom und Hitze)
+        if _en_pin is not None:
+            _en_pin.on() # Stepper deaktivieren (HIGH)
 
 def move_to_position(target_steps: int):
     move_steps(target_steps - current_position)
