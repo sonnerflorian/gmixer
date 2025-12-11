@@ -70,4 +70,4 @@ finally:
     GPIO.output(ENABLE_PIN, GPIO.HIGH) 
     print(f"Treiber deaktiviert (ENABLE: HIGH an GPIO {ENABLE_PIN})")
     time.sleep(5)
-    GPIO.cleanup()
+    #GPIO.cleanup()
