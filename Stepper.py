@@ -18,7 +18,7 @@ GPIO.setmode(GPIO.BCM)
 GPIO.setup(STEP_PIN, GPIO.OUT)
 GPIO.setup(DIR_PIN, GPIO.OUT)
 GPIO.setup(ENABLE_PIN, GPIO.OUT)
-
+GPIO.setwarnings(False)
 # Den Motor initialisieren (ENABLE auf LOW, um den Treiber zu aktivieren!)
 # Der A4988 ist aktiv, wenn ENABLE LOW ist.
 GPIO.output(ENABLE_PIN, GPIO.HIGH)
@@ -70,4 +70,4 @@ finally:
     GPIO.output(ENABLE_PIN, GPIO.HIGH) 
     print(f"Treiber deaktiviert (ENABLE: HIGH an GPIO {ENABLE_PIN})")
     time.sleep(5)
-    #GPIO.cleanup()
+    GPIO.cleanup()
