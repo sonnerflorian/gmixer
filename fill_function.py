@@ -131,38 +131,35 @@ def move_to_drink(drink_name: str):
 
 # gmixer/fill_function.py (Ersetze die Funktion pour_with_servo)
 
+# gmixer/fill_function.py (Ersetze die Funktion pour_with_servo)
+
 def pour_with_servo(servo_pin: int, forward_angle: float = 180, dwell: float = 0.5):
-    """Steuert das Servo-Ventil für eine bestimmte Dauer mit benutzerdefinierten Pulsweiten."""
+    """Steuert das Servo-Ventil mit Standard-gpiozero-Einstellungen."""
     
     _setup_driver() # Stellt sicher, dass die Factory läuft
     servo = None
     
-    # Pulsweiten in Sekunden (typisch für 0° und 180°)
-    MIN_PULSE = 0.0005  # 0.5 ms
-    MAX_PULSE = 0.0025  # 2.5 ms
-    
     try:
-        # Initialisiere das Servo mit der Factory und expliziten Pulsweiten
-        servo = Servo(servo_pin, 
-                      min_pulse_width=MIN_PULSE, 
-                      max_pulse_width=MAX_PULSE, 
-                      pin_factory=_factory) 
+        # Initialisiere das Servo OHNE explizite Pulsweiten.
+        # Nutzt die Standardwerte von gpiozero (1ms bis 2ms), die in der Regel funktionieren.
+        servo = Servo(servo_pin, pin_factory=_factory) 
         
-        # Servo öffnen: Wir müssen den value-Bereich von -1.0 (Min) bis +1.0 (Max) nutzen.
-        # Wenn forward_angle = 180, dann soll servo.value auf +1.0 gesetzt werden.
-        # Bei 0 Grad soll -1.0 genutzt werden.
+        # Servo öffnen: Wert von -1.0 (Min) bis +1.0 (Max)
+        # Die Umrechnung bleibt: (180 / 90) - 1.0 = +1.0
         servo_value = (forward_angle / 90.0) - 1.0 
         
         servo.value = servo_value
         time.sleep(0.3)
-        time.sleep(dwell)
+        
+        if dwell > 0:
+            time.sleep(dwell)
         
         # Servo schließen
         servo.min() # Setzt auf den Minimalwert (-1.0)
         time.sleep(0.3)
         
     finally:
-        # Aufräumen
+        # Sauberes Aufräumen
         if servo is not None:
             servo.detach() 
             servo.close()
