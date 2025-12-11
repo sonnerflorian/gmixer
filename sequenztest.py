@@ -98,9 +98,15 @@ try:
         
         set_servo_angle(servo_obj, 0)
         time.sleep(0.5) 
-        
+    counter = 0
+    while counter > 8:    
+        move_stepper(STEPS_PER_REVOLUTION, False) # 200 Schritte rückwärts
+        counter += 1
+
     print("\n" + "="*40)
     print("SEQUENZ ABGESCHLOSSEN.")
+
+
 
 except KeyboardInterrupt:
     print("\nProgramm gestoppt durch Benutzer (Strg+C).")
