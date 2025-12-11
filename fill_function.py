@@ -45,7 +45,6 @@ def _setup_driver():
         print("Driver setup successful.")
     except Exception as e:
         print(f"Fehler im Setup von fill_function: {e}")
-        # Wenn der Fehler auftritt, sofort aufräumen
         gpio_cleanup()
         raise
 
@@ -53,7 +52,6 @@ def _setup_driver():
 def gpio_cleanup():
     """
     Führt ein sauberes Herunterfahren aller Stepper/Factory-Ressourcen durch.
-    Wird von initialisation_stepper und main.py aufgerufen.
     """
     global _gpio_devices, _factory, _en_pin, _dir_pin, _step_pin
     
@@ -62,10 +60,13 @@ def gpio_cleanup():
 
     print("Führe fill_function GPIO Cleanup aus...")
     
+    # 1. Alle Servos explizit stilllegen
+    _silence_all_servos()
+    
+    # 2. Stepper-Pins schließen
     if _en_pin is not None:
         _en_pin.on() # Treiber deaktivieren (Sicherheit)
     
-    # Alle Geräte explizit schließen
     for device in _gpio_devices:
         if device is not None:
             try:
@@ -93,28 +94,45 @@ def _raw_step(delay):
 
 def _step_once():
     """Erzeugt einen einzelnen Schrittpuls mit fixem Delay."""
-    # Ruft _raw_step mit dem konfigurierten Delay auf
     _raw_step(STEP_DELAY)
 
+def _silence_all_servos():
+    """NEU: Erzwingt, dass alle definierten Servo-Pins in einen sicheren, abgetrennten Zustand versetzt werden."""
+    global _factory
+    if _factory is None:
+        return 
+
+    print("Silencing all defined servo pins...")
+
+    for pin in SERVO_PINS.values():
+        servo = None
+        try:
+            # Wir müssen für jeden Pin ein Objekt erstellen, um detach/close aufzurufen
+            servo = Servo(pin, pin_factory=_factory)
+            servo.detach() # Stellt sicher, dass kein PWM-Signal mehr gesendet wird
+        except Exception:
+            pass # Fehler ignorieren
+        finally:
+            if servo is not None:
+                servo.close()
+    print("Alle Servo-Pins sind stillgelegt.")
+    
+
 def move_steps(delta_steps: int):
-    """Bewegt den Stepper um delta_steps (negativ = Backward)."""
+    # ... (Rest der move_steps Funktion bleibt gleich) ...
     global current_position
     if delta_steps == 0:
         return
         
-    _setup_driver() # Muss immer vor Bewegung initialisiert werden
+    _setup_driver() 
         
-    # Richtung setzen
     direction = cfg.STEPPER_FORWARD if delta_steps > 0 else cfg.STEPPER_BACKWARD
     _dir_pin.value = direction 
     
-    # Schritte ausführen
     for _ in range(abs(delta_steps)):
         _step_once()
         
     current_position += delta_steps
-
-# ... (move_to_position und move_to_drink bleiben gleich) ...
 
 def move_to_position(target_steps: int):
     move_steps(target_steps - current_position)
@@ -125,27 +143,22 @@ def move_to_drink(drink_name: str):
     
     _setup_driver() 
     try:
-        move_to_position(-DRINK_POSITIONS[drink_name])
+        move_to_position(DRINK_POSITIONS[drink_name])
     finally:
         pass 
-
-# gmixer/fill_function.py (Ersetze die Funktion pour_with_servo)
-
-# gmixer/fill_function.py (Ersetze die Funktion pour_with_servo)
 
 def pour_with_servo(servo_pin: int, forward_angle: float = 180, dwell: float = 0.5):
     """Steuert das Servo-Ventil mit Standard-gpiozero-Einstellungen."""
     
-    _setup_driver() # Stellt sicher, dass die Factory läuft
+    _setup_driver()
+    _silence_all_servos() # NEU: Sicherstellen, dass alle anderen Servos still sind!
     servo = None
     
     try:
-        # Initialisiere das Servo OHNE explizite Pulsweiten.
-        # Nutzt die Standardwerte von gpiozero (1ms bis 2ms), die in der Regel funktionieren.
+        # Initialisiere nur den aktiven Servo
         servo = Servo(servo_pin, pin_factory=_factory) 
         
-        # Servo öffnen: Wert von -1.0 (Min) bis +1.0 (Max)
-        # Die Umrechnung bleibt: (180 / 90) - 1.0 = +1.0
+        # Servo öffnen
         servo_value = (forward_angle / 90.0) - 1.0 
         
         servo.value = servo_value
@@ -155,11 +168,11 @@ def pour_with_servo(servo_pin: int, forward_angle: float = 180, dwell: float = 0
             time.sleep(dwell)
         
         # Servo schließen
-        servo.min() # Setzt auf den Minimalwert (-1.0)
+        servo.min() 
         time.sleep(0.3)
         
     finally:
-        # Sauberes Aufräumen
+        # Sauberes Aufräumen des aktiven Servos
         if servo is not None:
             servo.detach() 
             servo.close()
