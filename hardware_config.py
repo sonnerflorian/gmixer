@@ -7,7 +7,7 @@ STEPPER_PINS = {"DIR": 20, "STEP": 16, "EN": 21}
 # True/False wird von gpiozero OutputDevice(pin).value = direction verwendet.
 STEPPER_FORWARD = True      # Richtung zum Endschalter (muss zu Ihrer Verkabelung passen)
 STEPPER_BACKWARD = False    # Richtung weg vom Endschalter
-STEP_DELAY = 0.001          # 1 ms
+STEP_DELAY = 0.0005          # 1 ms
 
 # Taster-Konfiguration (für gpiozero Button)
 SWITCH_PIN = 2               
