@@ -1,37 +1,38 @@
 import time
-# Importiere nur die benötigten Klassen von gpiozero
 from gpiozero import OutputDevice, Servo 
-# 'digital_thread' wurde entfernt, da es nicht benötigt wird und den Fehler verursacht hat.
+# Importiere die empfohlene Factory für stabileres PWM und Timing
+from gpiozero.pins.pigpio import PiGPIOFactory 
 
 # --- 1. GLOBALE KONFIGURATION ---
 
-# Steppermotor Pins (A4988-Treiber)
 STEP_PIN = 16 
 DIR_PIN = 20
 ENABLE_PIN = 21
 DELAY = 0.002 # Verzögerung zwischen Pulsen (in Sekunden)
-STEPS_PER_REVOLUTION = 200 # Schritte für 1 volle Umdrehung
+STEPS_PER_REVOLUTION = 200
 
-# Servo Pins (Liste der 8 GPIO-Pins)
 SERVO_PINS = [26, 19, 13, 6, 5, 10, 27, 22]
 
 # -----------------------------------
 # --- 2. GERÄTE-SETUP ---
 # -----------------------------------
 
-# Stepper-Geräte initialisieren
-dir_pin = OutputDevice(DIR_PIN)
-enable_pin = OutputDevice(ENABLE_PIN)
-step_pin = OutputDevice(STEP_PIN) 
+# Instanz der PiGPIOFactory erstellen und als Standard setzen
+factory = PiGPIOFactory()
+
+# Stepper-Geräte initialisieren (Alle müssen die Factory verwenden)
+dir_pin = OutputDevice(DIR_PIN, pin_factory=factory)
+enable_pin = OutputDevice(ENABLE_PIN, pin_factory=factory)
+step_pin = OutputDevice(STEP_PIN, pin_factory=factory) 
 
 # Servo-Geräte initialisieren
 servos = {}
 for pin in SERVO_PINS:
-    servos[pin] = Servo(pin) 
-    servos[pin].detach() # Deaktiviert das PWM-Signal initial
+    # Übergebe die Factory an jedes Servo-Objekt
+    servos[pin] = Servo(pin, pin_factory=factory) 
+    servos[pin].detach() 
     
-# Steppermotor am Anfang deaktivieren (enable_pin.on() setzt HIGH = AUS)
-enable_pin.on() 
+enable_pin.on() # Stepper deaktivieren (HIGH = AUS)
 print("Initialisierung abgeschlossen. Geräte bereit.")
 
 # -----------------------------------
@@ -40,18 +41,13 @@ print("Initialisierung abgeschlossen. Geräte bereit.")
 
 def set_servo_angle(servo_obj, angle):
     """Bewegt den Servo zu einem Winkel und deaktiviert das Signal wieder."""
-    
-    # Berechne den gpiozero-Wert: value von -1.0 (0 Grad) bis +1.0 (180 Grad)
     value = (angle / 90.0) - 1.0
-    
     servo_obj.value = value
-    time.sleep(0.5) # Wartezeit für die Bewegung
-    
-    # Signal trennen (Deaktivieren) um Zittern zu vermeiden
+    time.sleep(0.5) 
     servo_obj.detach() 
 
 def move_stepper(steps, direction):
-    """Bewegt den Stepper und deaktiviert ihn anschließend."""
+    """Bewegt den Stepper mit manueller HIGH/LOW-Schleife und deaktiviert ihn."""
     print(f"-> Stepper: Bewege {steps} Schritte.")
     
     # 1. Motor aktivieren (enable_pin.off() setzt auf LOW)
@@ -61,14 +57,17 @@ def move_stepper(steps, direction):
     dir_pin.value = direction 
     time.sleep(0.005) 
     
-    # 3. Schritte ausführen: Nutzt die pulse-Methode, die stabiler ist
-    step_pin.pulse(
-        n=steps, 
-        duration=DELAY * 2, # Gesamtdauer eines HIGH-LOW-Zyklus
-        background=False    # Blockiert, bis alle Pulse gesendet sind
-    )
-
-    # 4. Motor deaktivieren (enable_pin.on() setzt auf HIGH)
+    # 3. Schritte ausführen: MANUELLE HIGH/LOW-SCHLEIFE
+    for _ in range(steps):
+        # step_pin.on() entspricht GPIO.HIGH
+        step_pin.on() 
+        time.sleep(DELAY)
+        
+        # step_pin.off() entspricht GPIO.LOW
+        step_pin.off()
+        time.sleep(DELAY)
+    
+    # 4. Motor deaktivieren
     enable_pin.on()
     time.sleep(0.1)
     print("-> Stepper: Deaktiviert.")
@@ -91,15 +90,12 @@ try:
         # TEIL 2: Servo-Bewegung (0 -> 90 -> 0)
         print(f"-> Servo: Steuere Pin {pin}")
         
-        # 0 Grad anfahren
         set_servo_angle(servo_obj, 0) 
         time.sleep(0.5) 
         
-        # 90 Grad anfahren
         set_servo_angle(servo_obj, 90)
         time.sleep(1.0) 
         
-        # Zurück zu 0 Grad
         set_servo_angle(servo_obj, 0)
         time.sleep(0.5) 
         
@@ -111,8 +107,5 @@ except KeyboardInterrupt:
 
 finally:
     print("Führe GPIO-Cleanup aus.")
-    
-    # 5. AUFRÄUMEN
-    # Sicherstellen, dass der Stepper deaktiviert ist
     enable_pin.on()
     # gpiozero schließt alle Geräte automatisch
