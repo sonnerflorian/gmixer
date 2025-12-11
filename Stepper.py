@@ -11,7 +11,7 @@ ENABLE_PIN = 21
 DELAY = 0.0001 
 
 # Anzahl der Schritte für eine volle Umdrehung (meistens 200 bei Vollschritt-Modus)
-STEPS_PER_REVOLUTION = 2000
+STEPS_PER_REVOLUTION = 3200
 
 # 2. GPIO-Einrichtung
 GPIO.setmode(GPIO.BCM)
@@ -21,7 +21,7 @@ GPIO.setup(ENABLE_PIN, GPIO.OUT)
 
 # Den Motor initialisieren (ENABLE auf LOW, um den Treiber zu aktivieren!)
 # Der A4988 ist aktiv, wenn ENABLE LOW ist.
-GPIO.output(ENABLE_PIN, GPIO.LOW) 
+GPIO.output(ENABLE_PIN, GPIO.HIGH)  # Zuerst deaktivieren
 print(f"Treiber aktiviert (ENABLE: LOW an GPIO {ENABLE_PIN})")
 
 # 3. Funktion zur Motorsteuerung
@@ -32,6 +32,7 @@ def move_stepper(steps, direction):
     """
     # 1. Richtung setzen
     # True für eine Richtung, False für die andere (je nach Verdrahtung)
+    GPIO.output(ENABLE_PIN, GPIO.LOW)
     GPIO.output(DIR_PIN, direction) 
     print(f"Setze Richtung: {'Vorwärts' if direction else 'Rückwärts'}")
     
@@ -45,6 +46,7 @@ def move_stepper(steps, direction):
         GPIO.output(STEP_PIN, GPIO.LOW)
         time.sleep(DELAY)
 
+    GPIO.output(ENABLE_PIN, GPIO.HIGH)
 # 4. Hauptprogramm
 try:
     print("-" * 30)
