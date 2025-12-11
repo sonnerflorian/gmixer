@@ -32,7 +32,7 @@ DRINK_POSITIONS = {
     "start": 0,
     "Apfelsaft": 300,
     "Wasser": 600,
-    "Johannisbeere": 1000,
+    "Johannisbeere": 900,
     # "Getränk4": 1200,
     # "Getränk5": 2000,
     # "Getränk6": 2400,
