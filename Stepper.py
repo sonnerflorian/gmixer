@@ -68,4 +68,5 @@ finally:
     # Deaktiviere den Motor, um Energie zu sparen und das Halten aufzuheben
     GPIO.output(ENABLE_PIN, GPIO.HIGH) 
     print(f"Treiber deaktiviert (ENABLE: HIGH an GPIO {ENABLE_PIN})")
+    delay(10)
     GPIO.cleanup()
