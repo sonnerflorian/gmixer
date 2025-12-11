@@ -126,6 +126,18 @@ else:
     for r in range(max_rows):
         frame.grid_rowconfigure(r, weight=1)
 
+
+# --- NEUER CODE HIER: Startet die Initialisierung beim App-Start ---
+
+# 1. Buttons sperren, damit der Benutzer nicht während des Homings klickt
+set_buttons_state("disabled")
+status_label.config(text="Anwendung gestartet. Homing wird ausgeführt...")
+
+# 2. Startet den Thread für die Homing-Routine (nutzt die bereits definierte Logik)
+homing_thread = threading.Thread(target=on_recipe_done, args=("Homing",), daemon=True)
+homing_thread.start()
+
+
 # NEUER CODE FÜR SAUBERES CLEANUP:
 try:
     # Startet die GUI
