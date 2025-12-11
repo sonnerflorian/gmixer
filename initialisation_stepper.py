@@ -95,7 +95,12 @@ except KeyboardInterrupt:
     print("\nRoutine gestoppt durch Benutzer (Strg+C).")
 
 finally:
-    # 5. AUFRÄUMEN
-    print("Führe Cleanup aus.")
+    try:
+        print("Führe Cleanup aus.")
+        if 'button' in locals() and button is not None:
+            button.close()
+            print("-> Taster-Ressourcen erfolgreich freigegeben.")
+    except Exception as e:
+        print(f"Warnung beim Schließen des Tasters: {e}")
+        
     enable_pin.on()
-    # gpiozero schließt die Geräte automatisch
