@@ -3,7 +3,7 @@ from gpiozero import Servo
 from gpiozero.pins.pigpio import PiGPIOFactory 
 
 # --- KONFIGURATION ---
-SERVO_PIN = 26       # BCM-Pin-Nummer (Ihr funktionierender Pin)
+SERVO_PIN = 19       # BCM-Pin-Nummer (Ihr funktionierender Pin)
 TEST_CYCLES = 3      # Wie oft soll der Servo fahren
 
 # Aggressive Pulsweiten für maximale Reichweite (0.45ms bis 2.55ms)
