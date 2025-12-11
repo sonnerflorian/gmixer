@@ -1,106 +1,103 @@
 import time
-from gpiozero import OutputDevice, Button
+from gpiozero import Button
 from gpiozero.pins.pigpio import PiGPIOFactory 
 import sys
 
+# Importiere die zentralen Module
+import fill_function as fill 
+import hardware_config as cfg
+
 # --- 1. GLOBALE KONFIGURATION ---
+BUTTON_PIN = cfg.SWITCH_PIN
+DELAY = cfg.STEP_DELAY 
 
-# Steppermotor Pins (A4988-Treiber)
-STEP_PIN = 16 
-DIR_PIN = 20
-ENABLE_PIN = 21
-DELAY = 0.0005 # Geschwindigkeit des Steppers (anpassen für schnellere/langsamere Suche)
+# Definierte Warteposition in Schritten von Home (Button) entfernt
+WAITING_STEPS = 2400 # 8 * 300 Schritte
 
-# Taster-Pin (Endschalter)
-BUTTON_PIN = 2 # GPIO 2 hat festen Pull-Up und muss mit GND verbunden werden
+# Globale Variable für den Taster und die Factory
+_button = None
+_factory = None
 
 # -----------------------------------
-# --- 2. GERÄTE-SETUP ---
+# --- 2. GERÄTE-SETUP (NUR TASTER) ---
 # -----------------------------------
 
 try:
-    # Starte die pigpio Factory (Voraussetzung: pigpiod läuft)
-    factory = PiGPIOFactory()
-
-    # Stepper-Geräte initialisieren
-    dir_pin = OutputDevice(DIR_PIN, pin_factory=factory)
-    enable_pin = OutputDevice(ENABLE_PIN, pin_factory=factory)
-    step_pin = OutputDevice(STEP_PIN, pin_factory=factory) 
+    # Starte die pigpio Factory
+    _factory = PiGPIOFactory()
 
     # Taster initialisieren (Wir verwenden den festen Pull-Up von GPIO 2)
-    # Taster wird als gedrückt erkannt, wenn das Signal auf LOW (GND) gezogen wird.
-    button = Button(BUTTON_PIN, pull_up=True, pin_factory=factory) 
+    _button = Button(BUTTON_PIN, pull_up=cfg.SWITCH_PULL, pin_factory=_factory) 
     
-    # Stepper am Anfang deaktivieren
-    enable_pin.on() 
     print("Initialisierung abgeschlossen. Start bereit.")
 
 except Exception as e:
     print(f"Fehler bei der Initialisierung: {e}")
-    print("Sicherstellen, dass der pigpiod Daemon läuft und GPIO 2 mit GND verbunden ist!")
     sys.exit(1)
 
 
 # -----------------------------------
-# --- 3. INITIALISIERUNGS-ROUTINE ---
+# --- 3. HOMING-ROUTINE ---
 # -----------------------------------
 
-def move_stepper_until_button_pressed(direction=False):
-    """
-    Bewegt den Steppermotor Schritt für Schritt in die angegebene Richtung (False/Rückwärts), 
-    bis der Taster (Button) geschlossen wird (LOW).
-    """
+def home_stepper():
+    """Führt Homing durch und fährt zur Warteposition."""
     
-    # 1. Prüfe, ob der Taster bereits gedrückt ist
-    if button.is_pressed:
-        print("Taster ist bereits geschlossen. Home-Position gefunden.")
-        return
-        
-    print(f"\n--- STARTE HOME-SUCHE (Richtung: {'Vorwärts' if direction else 'Rückwärts'}) ---")
+    # 0. Setup der Stepper-Pins über fill_function
+    # Dies initialisiert die Stepper-Pins in fill_function's globalen Variablen.
+    fill._setup_driver() 
     
-    # 2. Motor aktivieren und Richtung setzen
-    enable_pin.off()
-    dir_pin.value = direction 
-    time.sleep(0.005) # Kurze Zeit, um den Treiber zu stabilisieren
+    # 1. Homing: Fährt in Richtung des Endschalters (BACKWARD)
+    print("--- 1. STARTE HOME-SUCHE ---")
     
-    # 3. Endlosschleife, die bei jedem Schritt den Zustand des Tasters prüft
-    # Die Schleife läuft, solange der Taster NICHT gedrückt ist
-    while not button.is_pressed:
-        
-        # Sende einen Schritt
-        step_pin.on() 
-        time.sleep(DELAY)
-        
-        step_pin.off()
-        time.sleep(DELAY)
-        
-    # 4. Wenn die Schleife beendet wird, wurde der Taster gedrückt
-    print("\n\n*** HOME-POSITION ERREICHT UND MOTOR GESTOPPT! ***")
+    # Setze Richtung und aktiviere Stepper über fill_function's globale Objekte
+    fill._en_pin.off()
+    fill._dir_pin.value = cfg.STEPPER_BACKWARD 
+    time.sleep(0.005)
     
-    # Motor deaktivieren, um Haltestrom und Geräusche zu eliminieren
-    enable_pin.on()
-    time.sleep(0.1)
+    # Schleife läuft, solange der Taster NICHT gedrückt ist
+    while not _button.is_pressed:
+        fill._step_once()
+        
+    print("\n\n*** HOME-POSITION ERREICHT (Position 0) ***")
+    fill._en_pin.on() # Deaktivieren
+
+    # 2. Zurückfahren auf die Warteposition (2400 Schritte)
+    print(f"--- 2. Fahren zur Warteposition ({WAITING_STEPS} Schritte) ---")
+    
+    # Nutze die zentrale move_steps Funktion (setzt Richtung auf FORWARD)
+    fill.move_steps(WAITING_STEPS) 
+    
+    # 3. Aktuelle Position speichern
+    fill.set_current_position(WAITING_STEPS)
+    print(f"*** WARTEPOSITION BEI {WAITING_STEPS} SCHRITTEN ERREICHT. ***")
+
+    # Bereinigung der Stepper-Pins, damit das Rezept-Skript sie neu initialisieren kann
+    fill._cleanup_driver()
 
 
 # -----------------------------------
-# --- 4. HAUPTPROGRAMM ---
+# --- 4. CLEANUP-FUNKTION ---
 # -----------------------------------
 
-try:
-    # Starte die Home-Suche. Der Motor läuft, bis der Button GPIO 2 auf GND zieht.
-    # Wir setzen direction=False (die Richtung, in der der Endschalter liegt)
-    move_stepper_until_button_pressed(direction=False) 
+def gpio_cleanup():
+    """Schließt alle lokalen Ressourcen (Button) und ruft das globale Cleanup auf."""
+    global _button
 
-except KeyboardInterrupt:
-    print("\nRoutine gestoppt durch Benutzer (Strg+C).")
-
-finally:
-    try:
-        print("Führe Cleanup aus.")
-        if 'button' in locals() and button is not None:
-            button.close()
+    # 1. Lokale Button-Ressourcen schließen (WICHTIG für Thread-Beendigung)
+    if _button is not None:
+        try:
+            _button.close()
             print("-> Taster-Ressourcen erfolgreich freigegeben.")
-    except Exception as e:
-        print(f"Warnung beim Schließen des Tasters: {e}")
-        
-    enable_pin.on()
+        except Exception as e:
+            print(f"Warnung beim Schließen des Tasters: {e}")
+
+    # 2. Globales Cleanup für Stepper/Factory aufrufen (falls nötig)
+    fill.gpio_cleanup()
+
+
+# -----------------------------------
+# --- 5. HAUPTPROGRAMM (Test-Code) ---
+# -----------------------------------
+# ... (Wird von main.py ignoriert und ist nur zum Testen gedacht)
+# ...

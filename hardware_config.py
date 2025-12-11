@@ -1,13 +1,20 @@
-import RPi.GPIO as GPIO
+# gmixer/hardware_config.py
 
+# Die Pins (BCM) bleiben gleich
 STEPPER_PINS = {"DIR": 16, "STEP": 20, "EN": 21}
-STEPPER_FORWARD = GPIO.HIGH      # Richtung zum Endschalter
-STEPPER_BACKWARD = GPIO.LOW      # Richtung weg vom Endschalter
-STEP_DELAY = 0.001               # 1 ms
 
-SWITCH_PIN = 17
-SWITCH_PULL = "UP"               # "UP" oder "DOWN"
-SWITCH_ACTIVE_STATE = GPIO.LOW   # LOW = gedrückt
+# NEU: Boolesche Werte für die Richtung (True/False)
+# True/False wird von gpiozero OutputDevice(pin).value = direction verwendet.
+STEPPER_FORWARD = True      # Richtung zum Endschalter (muss zu Ihrer Verkabelung passen)
+STEPPER_BACKWARD = False    # Richtung weg vom Endschalter
+STEP_DELAY = 0.001          # 1 ms
+
+# Taster-Konfiguration (für gpiozero Button)
+SWITCH_PIN = 2               
+# NEU: Wir nutzen den festen Pull-Up von GPIO 2
+SWITCH_PULL = True           
+# LOW (False) = gedrückt, da der Taster mit GND verbunden ist
+SWITCH_ACTIVE_STATE = False  
 
 # Servo-Pins je Getränk (BCM)
 SERVO_PINS = {

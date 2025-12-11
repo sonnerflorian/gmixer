@@ -43,7 +43,8 @@ def on_recipe_done(name: str):
 
     def homing_runner():
         try:
-            initialisation_stepper.home_stepper()
+            # Führt Homing (Button-Druck) und das Fahren zur Warteposition (2400 Schritte) aus
+            initialisation_stepper.home_stepper() 
             msg = "Bereit. Bitte Rezept wählen."
         except Exception as exc:
             msg = f"Homing fehlgeschlagen: {exc}"
@@ -72,8 +73,10 @@ def start_recipe(file_path: Path):
 
     def runner():
         try:
+            # Das Rezept wird als Subprozess gestartet, um die Pins zu steuern
             subprocess.run(cmd, check=False)
         finally:
+            # Nach Ende des Rezepts wird die Homing-Routine gestartet
             root.after(0, on_recipe_done, name)
 
     current_thread = threading.Thread(target=runner, daemon=True)
@@ -123,4 +126,18 @@ else:
     for r in range(max_rows):
         frame.grid_rowconfigure(r, weight=1)
 
-root.mainloop()
+# NEUER CODE FÜR SAUBERES CLEANUP:
+try:
+    # Startet die GUI
+    root.mainloop()
+except KeyboardInterrupt:
+    print("\nProgramm gestoppt durch Benutzer (Strg+C).")
+finally:
+    # Sauberes Herunterfahren der GPIO-Ressourcen
+    print("Starte GPIO-Cleanup...")
+    try:
+        # Ruft die neue, zentralisierte Cleanup-Funktion auf
+        initialisation_stepper.gpio_cleanup()
+        print("GPIO-Ressourcen erfolgreich freigegeben.")
+    except Exception as e:
+        print(f"Warnung beim Cleanup: {e}")
