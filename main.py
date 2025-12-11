@@ -19,7 +19,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 RECIPES_DIR = SCRIPT_DIR / "Rezepte"
 
 current_thread = None
-SKIP_HOMING_AFTER = False #os.getenv("SKIP_HOMING_AFTER", "0") == "1"
+# SKIP_HOMING_AFTER wird entfernt.
 
 def set_buttons_state(state: str):
     for widget in frame.winfo_children():
@@ -27,23 +27,29 @@ def set_buttons_state(state: str):
             widget.config(state=state)
 
 def _finalize_homing(msg: str):
+    """Wird nach dem Homing aufgerufen, um den Zustand zu aktualisieren."""
     global current_thread
     status_label.config(text=msg)
     set_buttons_state("normal")
     current_thread = None
 
-def on_recipe_done(name: str):
-    """Nach Rezeptende Homing starten; Buttons bleiben gesperrt bis fertig."""
+def _finalize_recipe(name: str):
+    """Wird nach dem Rezept aufgerufen, um den Zustand zu aktualisieren."""
     global current_thread
-    if SKIP_HOMING_AFTER:
-        _finalize_homing(f"{name} fertig. Homing übersprungen (Testmodus).")
-        return
+    # Buttons werden freigegeben, es wird KEIN Homing gestartet
+    _finalize_homing(f"{name} fertig. Bereit. Bitte Rezept wählen.")
 
-    status_label.config(text=f"{name} fertig. Homing wird ausgeführt...")
+
+def run_initial_homing():
+    """Führt die Homing-Routine einmalig beim Start aus."""
+    global current_thread
+    
+    set_buttons_state("disabled")
+    status_label.config(text="Anwendung gestartet. Homing wird ausgeführt...")
 
     def homing_runner():
         try:
-            # Führt Homing (Button-Druck) und das Fahren zur Warteposition (2400 Schritte) aus
+            # Führt Homing (Button-Druck) und das Fahren zur Warteposition aus
             initialisation_stepper.home_stepper() 
             msg = "Bereit. Bitte Rezept wählen."
         except Exception as exc:
@@ -53,6 +59,7 @@ def on_recipe_done(name: str):
 
     current_thread = threading.Thread(target=homing_runner, daemon=True)
     current_thread.start()
+
 
 def start_recipe(file_path: Path):
     global current_thread
@@ -76,8 +83,8 @@ def start_recipe(file_path: Path):
             # Das Rezept wird als Subprozess gestartet, um die Pins zu steuern
             subprocess.run(cmd, check=False)
         finally:
-            # Nach Ende des Rezepts wird die Homing-Routine gestartet
-            root.after(0, on_recipe_done, name)
+            # Nach Ende des Rezepts wird nur aufgeräumt
+            root.after(0, _finalize_recipe, name)
 
     current_thread = threading.Thread(target=runner, daemon=True)
     current_thread.start()
@@ -91,7 +98,7 @@ root.configure(bg=BACKGROUND)
 frame = tk.Frame(root, bg=BACKGROUND)
 frame.pack(expand=True, fill="both", padx=40, pady=40)
 
-status_label = tk.Label(root, text="Bitte Rezept wählen.", font=STATUS_FONT, fg=TEXT_COLOR, bg=BACKGROUND)
+status_label = tk.Label(root, text="Bitte warten, Homing läuft...", font=STATUS_FONT, fg=TEXT_COLOR, bg=BACKGROUND)
 status_label.pack(pady=20)
 
 files = sorted(f for f in RECIPES_DIR.iterdir() if f.is_file()) if RECIPES_DIR.exists() else []
@@ -127,15 +134,8 @@ else:
         frame.grid_rowconfigure(r, weight=1)
 
 
-# --- NEUER CODE HIER: Startet die Initialisierung beim App-Start ---
-
-# 1. Buttons sperren, damit der Benutzer nicht während des Homings klickt
-set_buttons_state("disabled")
-status_label.config(text="Anwendung gestartet. Homing wird ausgeführt...")
-
-# 2. Startet den Thread für die Homing-Routine (nutzt die bereits definierte Logik)
-homing_thread = threading.Thread(target=on_recipe_done, args=("Homing",), daemon=True)
-homing_thread.start()
+# --- Homing-Start beim Anwendungsstart ---
+run_initial_homing()
 
 
 # NEUER CODE FÜR SAUBERES CLEANUP:
