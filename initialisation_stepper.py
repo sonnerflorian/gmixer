@@ -8,8 +8,13 @@ import fill_function as fill
 import hardware_config as cfg
 
 # --- 1. GLOBALE KONFIGURATION ---
-BUTTON_PIN = cfg.SWITCH_PIN
+STEP_PIN = cfg.STEPPER_PINS["STEP"]
+DIR_PIN = cfg.STEPPER_PINS["DIR"]
+ENABLE_PIN = cfg.STEPPER_PINS["EN"]
 DELAY = cfg.STEP_DELAY 
+
+# KORREKTUR: BUTTON_PIN aus der Konfiguration laden
+BUTTON_PIN = cfg.SWITCH_PIN 
 
 # Definierte Warteposition in Schritten von Home (Button) entfernt
 WAITING_STEPS = 2400 # 8 * 300 Schritte
@@ -19,61 +24,96 @@ _button = None
 _factory = None
 
 # -----------------------------------
-# --- 2. GERÄTE-SETUP (NUR TASTER) ---
+# --- 2. GERÄTE-SETUP ---
 # -----------------------------------
 
 try:
     # Starte die pigpio Factory
     _factory = PiGPIOFactory()
 
-    # Taster initialisieren (Wir verwenden den festen Pull-Up von GPIO 2)
+    # Taster initialisieren (Nutzt jetzt die definierte BUTTON_PIN Variable)
     _button = Button(BUTTON_PIN, pull_up=cfg.SWITCH_PULL, pin_factory=_factory) 
     
     print("Initialisierung abgeschlossen. Start bereit.")
 
 except Exception as e:
+    # Fehler wird hier abgefangen und ausgegeben
     print(f"Fehler bei der Initialisierung: {e}")
     sys.exit(1)
 
 
 # -----------------------------------
-# --- 3. HOMING-ROUTINE ---
+# --- 3. HOMING-HELPER ---
 # -----------------------------------
+
+def move_stepper_until_button_pressed(direction=False):
+    """
+    Bewegt den Steppermotor mit Ramping, bis der Taster gedrückt wird.
+    """
+    
+    # 1. Prüfe, ob der Taster bereits gedrückt ist
+    if _button.is_pressed:
+        print("Taster ist bereits geschlossen. Home-Position gefunden.")
+        return
+        
+    print(f"\n--- STARTE HOME-SUCHE (Richtung: {'Vorwärts' if direction else 'Rückwärts'}) ---")
+    
+    # Ramping-Konstanten
+    START_DELAY = 0.005    # Sehr langsamer Start
+    TARGET_DELAY = cfg.STEP_DELAY # 0.001s (Ihr gewünschtes End-Tempo)
+    ACCEL_RATE = 0.999     # Beschleunigungsfaktor
+    
+    current_delay = START_DELAY
+    
+    # Motor aktivieren und Richtung setzen
+    fill._en_pin.off()
+    fill._dir_pin.value = direction 
+    time.sleep(0.005) 
+    
+    # Endlosschleife mit Beschleunigung
+    while not _button.is_pressed:
+        
+        # Sende einen Schritt
+        fill._step_pin.on() 
+        time.sleep(current_delay)
+        
+        fill._step_pin.off()
+        time.sleep(current_delay)
+        
+        # Beschleunigungs-Logik: Reduziere den Delay schrittweise
+        if current_delay > TARGET_DELAY:
+            current_delay *= ACCEL_RATE 
+            current_delay = max(current_delay, TARGET_DELAY) 
+
+    # Wenn die Schleife beendet wird, wurde der Taster gedrückt
+    print("\n\n*** HOME-POSITION ERREICHT UND MOTOR GESTOPPT! ***")
+    
+    # Motor deaktivieren
+    fill._en_pin.on()
+    time.sleep(0.1)
+
 
 def home_stepper():
     """Führt Homing durch und fährt zur Warteposition."""
     
     # 0. Setup der Stepper-Pins über fill_function
-    # Dies initialisiert die Stepper-Pins in fill_function's globalen Variablen.
     fill._setup_driver() 
     
     # 1. Homing: Fährt in Richtung des Endschalters (BACKWARD)
-    print("--- 1. STARTE HOME-SUCHE ---")
-    
-    # Setze Richtung und aktiviere Stepper über fill_function's globale Objekte
-    fill._en_pin.off()
-    fill._dir_pin.value = cfg.STEPPER_BACKWARD 
-    time.sleep(0.005)
-    
-    # Schleife läuft, solange der Taster NICHT gedrückt ist
-    while not _button.is_pressed:
-        fill._step_once()
-        
-    print("\n\n*** HOME-POSITION ERREICHT (Position 0) ***")
-    fill._en_pin.on() # Deaktivieren
+    move_stepper_until_button_pressed(direction=cfg.STEPPER_BACKWARD) 
 
     # 2. Zurückfahren auf die Warteposition (2400 Schritte)
     print(f"--- 2. Fahren zur Warteposition ({WAITING_STEPS} Schritte) ---")
     
-    # Nutze die zentrale move_steps Funktion (setzt Richtung auf FORWARD)
+    # Nutze die zentrale move_steps Funktion 
     fill.move_steps(WAITING_STEPS) 
     
     # 3. Aktuelle Position speichern
     fill.set_current_position(WAITING_STEPS)
     print(f"*** WARTEPOSITION BEI {WAITING_STEPS} SCHRITTEN ERREICHT. ***")
 
-    # Bereinigung der Stepper-Pins, damit das Rezept-Skript sie neu initialisieren kann
-    fill._cleanup_driver()
+    # 4. Bereinigung der Stepper-Pins
+    fill.gpio_cleanup()
 
 
 # -----------------------------------
@@ -84,29 +124,25 @@ def gpio_cleanup():
     """Schließt alle lokalen Ressourcen (Button) und ruft das globale Cleanup auf."""
     global _button
 
-    # 1. Lokale Button-Ressourcen schließen (WICHTIG für Thread-Beendigung)
+    # 1. Lokale Button-Ressourcen schließen
     if _button is not None:
         try:
             _button.close()
             print("-> Taster-Ressourcen erfolgreich freigegeben.")
-        except Exception as e:
-            print(f"Warnung beim Schließen des Tasters: {e}")
+        except Exception:
+            pass 
 
     # 2. Globales Cleanup für Stepper/Factory aufrufen (falls nötig)
     fill.gpio_cleanup()
 
 
 # -----------------------------------
-# --- 5. HAUPTPROGRAMM (Test-Code) ---
+# --- 5. HAUPTPROGRAMM (Manueller Start) ---
 # -----------------------------------
-# ... (Wird von main.py ignoriert und ist nur zum Testen gedacht)
-# ...
 
 if __name__ == "__main__":
     print("Starte manuelle Home-Suche...")
     
-    # Stellen Sie sicher, dass alle globalen Ressourcen bereinigt werden,
-    # egal ob die Routine normal oder durch Strg+C beendet wird.
     try:
         home_stepper()
     except KeyboardInterrupt:
