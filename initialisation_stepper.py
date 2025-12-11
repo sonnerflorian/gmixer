@@ -101,3 +101,16 @@ def gpio_cleanup():
 # -----------------------------------
 # ... (Wird von main.py ignoriert und ist nur zum Testen gedacht)
 # ...
+
+if __name__ == "__main__":
+    print("Starte manuelle Home-Suche...")
+    
+    # Stellen Sie sicher, dass alle globalen Ressourcen bereinigt werden,
+    # egal ob die Routine normal oder durch Strg+C beendet wird.
+    try:
+        home_stepper()
+    except KeyboardInterrupt:
+        print("\nRoutine gestoppt durch Benutzer (Strg+C).")
+    finally:
+        gpio_cleanup()
+        print("Manuelle Initialisierung beendet.")
