@@ -1,146 +1,151 @@
 import time
-import sys
-from gpiozero import OutputDevice, Servo
+from gpiozero import Button
 from gpiozero.pins.pigpio import PiGPIOFactory 
+import sys
+
+# Importiere die zentralen Module
+import fill_function as fill 
 import hardware_config as cfg
 
-# Konfiguration aus hardware_config
-PINS = cfg.STEPPER_PINS
-DRINK_POSITIONS = cfg.DRINK_POSITIONS
-SERVO_PINS = cfg.SERVO_PINS
-STEP_DELAY = cfg.STEP_DELAY
-current_position = 0
+# --- 1. GLOBALE KONFIGURATION ---
+STEP_PIN = cfg.STEPPER_PINS["STEP"]
+DIR_PIN = cfg.STEPPER_PINS["DIR"]
+ENABLE_PIN = cfg.STEPPER_PINS["EN"]
+DELAY = cfg.STEP_DELAY 
 
-# Globale Variablen für gpiozero Objekte, die einmalig initialisiert werden
+# Definierte Warteposition in Schritten von Home (Button) entfernt
+WAITING_STEPS = 2400 # 8 * 300 Schritte
+
+# Globale Variable für den Taster und die Factory
+_button = None
 _factory = None
-_dir_pin = None
-_step_pin = None
-_en_pin = None
-# Liste zur Speicherung aller initialisierten GPIO-Geräte für das globale Cleanup
-_gpio_devices = [] 
 
-def set_current_position(position_steps: int = 0):
-    global current_position
-    current_position = position_steps
+# -----------------------------------
+# --- 2. GERÄTE-SETUP ---
+# -----------------------------------
 
-def _setup_driver():
-    """Initialisiert die GPIO-Geräte mit PiGPIOFactory, falls noch nicht geschehen."""
-    global _factory, _dir_pin, _step_pin, _en_pin, _gpio_devices
+try:
+    # Starte die pigpio Factory
+    _factory = PiGPIOFactory()
+
+    # Taster initialisieren (Wir verwenden den festen Pull-Up von GPIO 2)
+    # Taster wird als gedrückt erkannt, wenn das Signal auf LOW (GND) gezogen wird.
+    _button = Button(BUTTON_PIN, pull_up=cfg.SWITCH_PULL, pin_factory=_factory) 
     
-    if _factory is not None:
-        return # Bereits initialisiert
+    print("Initialisierung abgeschlossen. Start bereit.")
 
-    try:
-        _factory = PiGPIOFactory()
-        
-        # Stepper Pins
-        _dir_pin = OutputDevice(PINS["DIR"], pin_factory=_factory)
-        _step_pin = OutputDevice(PINS["STEP"], pin_factory=_factory)
-        _en_pin = OutputDevice(PINS["EN"], pin_factory=_factory)
-        
-        # Liste für späteres Schließen füllen
-        _gpio_devices.extend([_dir_pin, _step_pin, _en_pin])
-
-        # Aktivieren des Treibers (EN=LOW in A4988)
-        _en_pin.off() 
-        print("Driver setup successful.")
-    except Exception as e:
-        print(f"Fehler im Setup: {e}")
-        sys.exit(1)
+except Exception as e:
+    print(f"Fehler bei der Initialisierung: {e}")
+    sys.exit(1)
 
 
-def gpio_cleanup():
+# -----------------------------------
+# --- 3. HOMING-HELPER ---
+# -----------------------------------
+
+def move_stepper_until_button_pressed(direction=False):
     """
-    Führt ein sauberes Herunterfahren aller global initialisierten 
-    gpiozero-Geräte durch. Wird von main.py aufgerufen.
+    Bewegt den Steppermotor mit Ramping, bis der Taster gedrückt wird.
     """
-    global _gpio_devices, _factory
     
-    if _factory is None:
-        return # Nichts zu tun
-
-    print("Führe fill_function GPIO Cleanup aus...")
-    
-    # Treiber deaktivieren (Sicherheit)
-    if _en_pin is not None:
-        _en_pin.on() 
-    
-    # Alle Geräte explizit schließen
-    for device in _gpio_devices:
-        try:
-            device.close()
-        except Exception:
-            pass
-            
-    _gpio_devices = []
-    _factory = None
-    print("Cleanup abgeschlossen.")
-
-
-def _step_once():
-    """Erzeugt einen einzelnen Schrittpuls."""
-    _step_pin.on()
-    time.sleep(STEP_DELAY)
-    _step_pin.off()
-    time.sleep(STEP_DELAY)
-
-def move_steps(delta_steps: int):
-    """Bewegt den Stepper um delta_steps (negativ = Backward)."""
-    global current_position
-    if delta_steps == 0:
+    # 1. Prüfe, ob der Taster bereits gedrückt ist
+    if _button.is_pressed:
+        print("Taster ist bereits geschlossen. Home-Position gefunden.")
         return
         
-    _setup_driver()
-        
-    # Richtung setzen: Abhängig vom Vorzeichen von delta_steps
-    direction = cfg.STEPPER_BACKWARD if delta_steps > 0 else cfg.STEPPER_FORWARD
-    _dir_pin.value = direction 
+    print(f"\n--- STARTE HOME-SUCHE (Richtung: {'Vorwärts' if direction else 'Rückwärts'}) ---")
     
-    # Schritte ausführen
-    for _ in range(abs(delta_steps)):
-        _step_once()
-        
-    current_position += delta_steps
-
-def move_to_position(target_steps: int):
-    move_steps(target_steps - current_position)
-
-def move_to_drink(drink_name: str):
-    if drink_name not in DRINK_POSITIONS:
-        raise KeyError(f"Unbekanntes Getränk: {drink_name}")
+    # Ramping-Konstanten
+    START_DELAY = 0.005    # Sehr langsamer Start
+    TARGET_DELAY = cfg.STEP_DELAY # 0.001s (Ihr gewünschtes End-Tempo)
+    ACCEL_RATE = 0.999     # Beschleunigungsfaktor
     
-    _setup_driver() 
+    current_delay = START_DELAY
+    
+    # Motor aktivieren und Richtung setzen
+    fill._en_pin.off()
+    fill._dir_pin.value = direction 
+    time.sleep(0.005) 
+    
+    # Endlosschleife mit Beschleunigung
+    while not _button.is_pressed:
+        
+        # Sende einen Schritt
+        fill._step_pin.on() 
+        time.sleep(current_delay)
+        
+        fill._step_pin.off()
+        time.sleep(current_delay)
+        
+        # Beschleunigungs-Logik: Reduziere den Delay schrittweise
+        if current_delay > TARGET_DELAY:
+            current_delay *= ACCEL_RATE 
+            current_delay = max(current_delay, TARGET_DELAY) 
+
+    # Wenn die Schleife beendet wird, wurde der Taster gedrückt
+    print("\n\n*** HOME-POSITION ERREICHT UND MOTOR GESTOPPT! ***")
+    
+    # Motor deaktivieren
+    fill._en_pin.on()
+    time.sleep(0.1)
+
+
+def home_stepper():
+    """Führt Homing durch und fährt zur Warteposition."""
+    
+    # 0. Setup der Stepper-Pins über fill_function
+    fill._setup_driver() 
+    
+    # 1. Homing: Fährt in Richtung des Endschalters (BACKWARD)
+    move_stepper_until_button_pressed(direction=cfg.STEPPER_BACKWARD) 
+
+    # 2. Zurückfahren auf die Warteposition (2400 Schritte)
+    print(f"--- 2. Fahren zur Warteposition ({WAITING_STEPS} Schritte) ---")
+    
+    # Nutze die zentrale move_steps Funktion 
+    fill.move_steps(WAITING_STEPS) 
+    
+    # 3. Aktuelle Position speichern
+    fill.set_current_position(WAITING_STEPS)
+    print(f"*** WARTEPOSITION BEI {WAITING_STEPS} SCHRITTEN ERREICHT. ***")
+
+    # 4. Bereinigung der Stepper-Pins
+    # KORREKTUR: Ruft die neue Cleanup-Funktion auf, damit fill._setup_driver() später wieder funktioniert.
+    fill.gpio_cleanup()
+
+
+# -----------------------------------
+# --- 4. CLEANUP-FUNKTION ---
+# -----------------------------------
+
+def gpio_cleanup():
+    """Schließt alle lokalen Ressourcen (Button) und ruft das globale Cleanup auf."""
+    global _button
+
+    # 1. Lokale Button-Ressourcen schließen (WICHTIG für Thread-Beendigung)
+    if _button is not None:
+        try:
+            _button.close()
+            print("-> Taster-Ressourcen erfolgreich freigegeben.")
+        except Exception as e:
+            # Dies fängt den Fehler ab, den Sie zuvor hatten, falls das Closing nicht perfekt ist
+            pass 
+
+    # 2. Globales Cleanup für Stepper/Factory aufrufen (falls nötig)
+    fill.gpio_cleanup()
+
+
+# -----------------------------------
+# --- 5. HAUPTPROGRAMM (Manueller Start) ---
+# -----------------------------------
+
+if __name__ == "__main__":
+    print("Starte manuelle Home-Suche...")
+    
     try:
-        move_to_position(DRINK_POSITIONS[drink_name])
+        home_stepper()
+    except KeyboardInterrupt:
+        print("\nRoutine gestoppt durch Benutzer (Strg+C).")
     finally:
-        # Kein Cleanup hier, da die Pins für das nächste Servo benötigt werden
-        pass 
-
-def pour_with_servo(servo_pin: int, forward_angle: float = 180, dwell: float = 0.5):
-    """Steuert das Servo-Ventil für eine bestimmte Dauer."""
-    
-    _setup_driver() 
-    servo = None
-    
-    try:
-        # Initialisiere das Servo
-        servo = Servo(servo_pin, pin_factory=_factory)
-        
-        # Servo öffnen (Angle-to-Value Konvertierung)
-        servo_value = (forward_angle / 90.0) - 1.0 
-        
-        servo.value = servo_value
-        time.sleep(0.3)
-        time.sleep(dwell)
-        
-        # Servo schließen
-        servo.min() 
-        time.sleep(0.3)
-        
-    finally:
-        # Aufräumen: Servo-Signal trennen und Objekt schließen
-        if servo is not None:
-            servo.detach() 
-            servo.close()  
-            # Das Servo muss nicht zur _gpio_devices Liste hinzugefügt werden, 
-            # da es hier lokal geschlossen wird.
+        gpio_cleanup()
+        print("Manuelle Initialisierung beendet.")
