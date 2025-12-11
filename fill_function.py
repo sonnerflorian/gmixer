@@ -96,26 +96,26 @@ def _step_once():
     """Erzeugt einen einzelnen Schrittpuls mit fixem Delay."""
     _raw_step(STEP_DELAY)
 
-def _silence_all_servos():
-    """NEU: Erzwingt, dass alle definierten Servo-Pins in einen sicheren, abgetrennten Zustand versetzt werden."""
-    global _factory
-    if _factory is None:
-        return 
+# def _silence_all_servos():
+#     """NEU: Erzwingt, dass alle definierten Servo-Pins in einen sicheren, abgetrennten Zustand versetzt werden."""
+#     global _factory
+#     if _factory is None:
+#         return 
 
-    print("Silencing all defined servo pins...")
+#     print("Silencing all defined servo pins...")
 
-    for pin in SERVO_PINS.values():
-        servo = None
-        try:
-            # Wir müssen für jeden Pin ein Objekt erstellen, um detach/close aufzurufen
-            servo = Servo(pin, pin_factory=_factory)
-            servo.detach() # Stellt sicher, dass kein PWM-Signal mehr gesendet wird
-        except Exception:
-            pass # Fehler ignorieren
-        finally:
-            if servo is not None:
-                servo.close()
-    print("Alle Servo-Pins sind stillgelegt.")
+#     for pin in SERVO_PINS.values():
+#         servo = None
+#         try:
+#             # Wir müssen für jeden Pin ein Objekt erstellen, um detach/close aufzurufen
+#             servo = Servo(pin, pin_factory=_factory)
+#             servo.detach() # Stellt sicher, dass kein PWM-Signal mehr gesendet wird
+#         except Exception:
+#             pass # Fehler ignorieren
+#         finally:
+#             if servo is not None:
+#                 servo.close()
+#     print("Alle Servo-Pins sind stillgelegt.")
     
 
 def move_steps(delta_steps: int):
@@ -162,25 +162,29 @@ def move_to_drink(drink_name: str):
     finally:
         pass 
 
+# gmixer/fill_function.py (Ersetze die Funktion pour_with_servo)
+
 def pour_with_servo(servo_pin: int, forward_angle: float = 180, dwell: float = 0.5):
     """Steuert das Servo-Ventil. Stellt sicher, dass der Stepper deaktiviert ist."""
     
     _setup_driver()
     
-    # 1. Hocheffektive Software-Trennung des Steppers
+    # 1. Software-Trennung des Steppers
     global _en_pin
-    if _en_pin is not None:
-        if _en_pin.value == False: # Wenn der Stepper aktiv ist (LOW)
-            _en_pin.on()           # Stepper deaktivieren (HIGH)
-            time.sleep(0.01)       # 10ms warten, damit die Ströme abfließen (wichtig!)
+    if _en_pin is not None and _en_pin.value == False:
+        _en_pin.on()           
+        time.sleep(0.01)       
             
-    _silence_all_servos() # Stellt sicher, dass alle anderen Servos still sind
+    # Wir initialisieren NUR den Servo-Pin, den wir benötigen.
     servo = None
     
     try:
         # 2. Servo-Aktivierung und Betrieb
+        # Initialisiere nur den aktiven Servo
         servo = Servo(servo_pin, pin_factory=_factory) 
         
+        print(f"-> Servo: Starte Pin {servo_pin}")
+
         # Servo öffnen
         servo_value = (forward_angle / 90.0) - 1.0 
         
@@ -197,8 +201,5 @@ def pour_with_servo(servo_pin: int, forward_angle: float = 180, dwell: float = 0
     finally:
         # Sauberes Aufräumen des aktiven Servos
         if servo is not None:
-            servo.detach() 
-            servo.close() 
-            
-    # HINWEIS: Der Stepper bleibt deaktiviert. 
-    # Er wird erst durch die nächste move_steps-Funktion (im Rezept) wieder aktiviert.
+            servo.detach() # Stoppt das PWM-Signal auf DIESEM Pin
+            servo.close()
