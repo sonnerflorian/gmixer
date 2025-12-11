@@ -9,7 +9,7 @@ STEP_PIN = 16
 DIR_PIN = 20
 ENABLE_PIN = 21
 DELAY = 0.0005 # Verzögerung zwischen Pulsen (in Sekunden)
-STEPS = 600
+STEPS = 300
 
 SERVO_PINS = [26, 19, 13, 6, 5, 10, 27, 22]
 
