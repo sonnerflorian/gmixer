@@ -8,10 +8,10 @@ ENABLE_PIN = 21
 
 # Schrittfrequenz: Wartezeit zwischen Pulsen in Sekunden.
 # Kleinere Zahl = höhere Geschwindigkeit. 0.001s ist ein guter Start.
-DELAY = 0.01 
+DELAY = 0.0001 
 
 # Anzahl der Schritte für eine volle Umdrehung (meistens 200 bei Vollschritt-Modus)
-STEPS_PER_REVOLUTION = 200
+STEPS_PER_REVOLUTION = 2000
 
 # 2. GPIO-Einrichtung
 GPIO.setmode(GPIO.BCM)
