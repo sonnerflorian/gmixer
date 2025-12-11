@@ -14,8 +14,8 @@ def main():
     # Wir vertrauen der Position aus Homing (2400)
     
     # 1. Apfelsaft (Target Pos: 0)
-    fill.move_to_drink("Johannesbeere")
-    fill.pour_with_servo(fill.SERVO_PINS["Johannesbeere"], dwell=0.7)
+    fill.move_to_drink("Johannisbeere")
+    fill.pour_with_servo(fill.SERVO_PINS["Johannisbeere"], dwell=0.7)
     time.sleep(0.5)
 
     # 2. Wasser (Target Pos: 800)
