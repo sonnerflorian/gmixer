@@ -131,4 +131,4 @@ finally:
     GPIO.output(ENABLE_PIN, GPIO.HIGH)
     
     # Alle Pins in den sicheren Zustand zurücksetzen
-    GPIO.cleanup()
+    #GPIO.cleanup()
