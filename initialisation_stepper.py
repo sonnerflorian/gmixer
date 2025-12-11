@@ -9,7 +9,7 @@ import sys
 STEP_PIN = 16 
 DIR_PIN = 20
 ENABLE_PIN = 21
-DELAY = 0.005 # Geschwindigkeit des Steppers (anpassen für schnellere/langsamere Suche)
+DELAY = 0.0005 # Geschwindigkeit des Steppers (anpassen für schnellere/langsamere Suche)
 
 # Taster-Pin (Endschalter)
 BUTTON_PIN = 2 # GPIO 2 hat festen Pull-Up und muss mit GND verbunden werden
