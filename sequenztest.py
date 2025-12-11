@@ -1,5 +1,8 @@
-import RPi.GPIO as GPIO
 import time
+# Importiere gpiozero Klassen
+from gpiozero import OutputDevice, Servo
+# Der Stepper wird hier als einfacher Pulsgeber und Richtungsausgabe behandelt
+from gpiozero.tools import digital_thread
 
 # --- 1. GLOBALE KONFIGURATION ---
 
@@ -7,76 +10,78 @@ import time
 STEP_PIN = 16 
 DIR_PIN = 20
 ENABLE_PIN = 21
-DELAY = 0.002 # Verzögerung für den Stepper (sollte Ruckeln minimieren)
+DELAY = 0.002 # Verzögerung zwischen Pulsen (in Sekunden)
 STEPS_PER_REVOLUTION = 200 # Schritte für 1 volle Umdrehung
 
 # Servo Pins (Liste der 8 GPIO-Pins)
 SERVO_PINS = [26, 19, 13, 6, 5, 17, 27, 22]
-FREQ = 50  # PWM-Frequenz für Servos (50 Hz)
 
 # -----------------------------------
-# --- 2. GPIO SETUP ---
+# --- 2. GERÄTE-SETUP (ersetzt GPIO.setup) ---
 # -----------------------------------
 
-# Warnungen unterdrücken, um flüssigen Start zu gewährleisten
-GPIO.setwarnings(False) 
-GPIO.setmode(GPIO.BCM) 
+# Stepper-Geräte initialisieren
+# OutputDevice ist perfekt für DIR und ENABLE
+dir_pin = OutputDevice(DIR_PIN)
+enable_pin = OutputDevice(ENABLE_PIN)
+step_pin = OutputDevice(STEP_PIN) # Wird später für die Puls-Funktion verwendet
 
-# Stepper Pins als Output
-GPIO.setup(STEP_PIN, GPIO.OUT)
-GPIO.setup(DIR_PIN, GPIO.OUT)
-GPIO.setup(ENABLE_PIN, GPIO.OUT)
-
-# Alle Servo Pins als Output initialisieren
+# Servo-Geräte initialisieren
+# Die Servo-Klasse kümmert sich um PWM (50Hz) und die Duty-Cycle-Berechnung
+# Das Dictionary speichert die Servo-Objekte
+servos = {}
 for pin in SERVO_PINS:
-    GPIO.setup(pin, GPIO.OUT)
-
-# PWM-Objekte für jeden Servo erstellen und starten (Duty Cycle 0)
-pwm_servos = {}
-for pin in SERVO_PINS:
-    pwm = GPIO.PWM(pin, FREQ)
-    pwm.start(0)
-    pwm_servos[pin] = pwm
+    # Die gpiozero Servo Klasse nimmt standardmäßig 50Hz und konvertiert Winkel/Werte automatisch
+    servos[pin] = Servo(pin) 
+    # Setze Servo initial in den 'deaktivierten' Zustand (keine PWM-Pulse, kein Zittern)
+    servos[pin].detach() 
     
-# Steppermotor am Anfang deaktivieren
-GPIO.output(ENABLE_PIN, GPIO.HIGH)
-print("Initialisierung abgeschlossen. Start bereit.")
+# Steppermotor am Anfang deaktivieren (ENABLE ist hier eine boolesche Invertierung des OutputDevice)
+# Bei A4988 ist LOW = AN, HIGH = AUS. OutputDevice(active_high=False) macht es einfacher.
+enable_pin.on() # .on() setzt den Pin auf HIGH (Deaktiviert den Treiber)
+print("Initialisierung abgeschlossen. Geräte bereit.")
 
 # -----------------------------------
 # --- 3. HELPER-FUNKTIONEN ---
 # -----------------------------------
 
-def set_servo_angle(pwm_object, angle):
-    """Konvertiert den Winkel in den Duty Cycle und bewegt den Servo."""
-    # Duty Cycle: DC = (Winkel / 18.0) + 2.5
-    duty_cycle = (angle / 18.0) + 2.5
+def set_servo_angle(servo_obj, angle):
+    """Bewegt den Servo zu einem Winkel und deaktiviert das Signal wieder."""
     
-    # Bewege den Servo
-    pwm_object.ChangeDutyCycle(duty_cycle)
-    # Wartezeit für die Bewegung (je nach Servo)
-    time.sleep(0.5) 
+    # 1. Servo aktivieren und Winkel setzen
+    # gpiozero verwendet einen Wert von -1 (entspricht 0 Grad) bis +1 (entspricht 180 Grad)
+    # Winkel 0 Grad -> Wert -1
+    # Winkel 90 Grad -> Wert 0
+    # Berechne den gpiozero-Wert: value = (angle / 90.0) - 1.0
+    value = (angle / 90.0) - 1.0
     
-    # Signal auf 0 setzen, um Rauschen im Stillstand zu vermeiden (optional, aber empfohlen)
-    pwm_object.ChangeDutyCycle(0) 
+    servo_obj.value = value
+    time.sleep(0.5) # Wartezeit für die Bewegung
+    
+    # 2. Signal trennen (Deaktivieren) um Zittern zu vermeiden
+    servo_obj.detach() 
 
 def move_stepper(steps, direction):
     """Bewegt den Stepper und deaktiviert ihn anschließend."""
     print(f"-> Stepper: Bewege {steps} Schritte.")
     
-    # Motor aktivieren
-    GPIO.output(ENABLE_PIN, GPIO.LOW)
-    GPIO.output(DIR_PIN, direction) 
-    time.sleep(0.005) # Kurze Zeit, um den Treiber zu stabilisieren
+    # 1. Motor aktivieren (enable_pin.off() setzt auf LOW)
+    enable_pin.off()
     
-    # Schritte ausführen
-    for _ in range(steps):
-        GPIO.output(STEP_PIN, GPIO.HIGH)
-        time.sleep(DELAY)
-        GPIO.output(STEP_PIN, GPIO.LOW)
-        time.sleep(DELAY)
-        
-    # Motor deaktivieren, um Haltestrom und Geräusche zu eliminieren
-    GPIO.output(ENABLE_PIN, GPIO.HIGH)
+    # 2. Richtung setzen (True/False wird automatisch auf HIGH/LOW abgebildet)
+    dir_pin.value = direction 
+    time.sleep(0.005) 
+    
+    # 3. Schritte ausführen: Nutzt die pulse-Methode von OutputDevice
+    # Wir senden die halbe Anzahl der Pulse, da 'pulse' HIGH und LOW automatisch regelt.
+    step_pin.pulse(
+        n=steps, 
+        duration=DELAY * 2, # Gesamtdauer eines HIGH-LOW-Zyklus
+        background=False    # Blockiert, bis alle Pulse gesendet sind
+    )
+
+    # 4. Motor deaktivieren (enable_pin.on() setzt auf HIGH)
+    enable_pin.on()
     time.sleep(0.1)
     print("-> Stepper: Deaktiviert.")
 
@@ -86,10 +91,8 @@ def move_stepper(steps, direction):
 # -----------------------------------
 
 try:
-    # Die Sequenz soll so oft durchlaufen, wie Servos vorhanden sind (8 Durchläufe)
-    # Wir iterieren direkt über die Pin-Nummern
     for i, pin in enumerate(SERVO_PINS):
-        pwm_obj = pwm_servos[pin]
+        servo_obj = servos[pin]
         
         print("\n" + "="*40)
         print(f"START DURCHLAUF {i+1} von {len(SERVO_PINS)}")
@@ -101,16 +104,16 @@ try:
         print(f"-> Servo: Steuere Pin {pin}")
         
         # 0 Grad anfahren
-        set_servo_angle(pwm_obj, 0) 
-        time.sleep(0.5) # Kurze Pause an 0 Grad
+        set_servo_angle(servo_obj, 0) 
+        time.sleep(0.5) 
         
         # 90 Grad anfahren
-        set_servo_angle(pwm_obj, 90)
-        time.sleep(1.0) # Halten auf 90 Grad
+        set_servo_angle(servo_obj, 90)
+        time.sleep(1.0) 
         
         # Zurück zu 0 Grad
-        set_servo_angle(pwm_obj, 0)
-        time.sleep(0.5) # Kurze Pause an 0 Grad
+        set_servo_angle(servo_obj, 0)
+        time.sleep(0.5) 
         
     print("\n" + "="*40)
     print("SEQUENZ ABGESCHLOSSEN.")
@@ -121,14 +124,10 @@ except KeyboardInterrupt:
 finally:
     print("Führe GPIO-Cleanup aus.")
     
-    # 5. AUFRÄUMEN
+    # 5. AUFRÄUMEN (Mit gpiozero entfällt GPIO.cleanup())
     
-    # Alle PWM-Signale für Servos stoppen
-    for pwm in pwm_servos.values():
-        pwm.stop()
-        
-    # Steppermotor-Treiber sicher deaktivieren (falls nicht schon geschehen)
-    GPIO.output(ENABLE_PIN, GPIO.HIGH)
+    # Alle Geräte werden automatisch beendet/freigegeben, wenn das Skript endet.
+    # Wir stellen nur sicher, dass der Stepper deaktiviert ist:
+    enable_pin.on()
     
-    # Alle Pins in den sicheren Zustand zurücksetzen
-    #GPIO.cleanup()
+    # Die Geräte-Objekte werden beim Beenden des Skripts automatisch freigegeben (close()).
