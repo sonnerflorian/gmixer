@@ -14,7 +14,8 @@ STEP_PIN = cfg.STEPPER_PINS["STEP"]
 DIR_PIN = cfg.STEPPER_PINS["DIR"]
 ENABLE_PIN = cfg.STEPPER_PINS["EN"]
 DELAY = cfg.STEP_DELAY 
-BUTTON_PIN = cfg.SWITCH_PIN # <--- MUSS HIER DEFINIERT SEIN
+BUTTON_PIN = 2
+#BUTTON_PIN = cfg.SWITCH_PIN # <--- MUSS HIER DEFINIERT SEIN
 
 # Definierte Warteposition in Schritten von Home (Button) entfernt
 WAITING_STEPS = 2400 # 8 * 300 Schritte
