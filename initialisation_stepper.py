@@ -30,7 +30,7 @@ try:
 
     # Taster initialisieren (mit Pull-Down-Widerstand)
     # Wenn der Schalter 3.3V mit GPIO 2 verbindet, nutzen wir pull_up=False
-    button = Button(BUTTON_PIN, pull_up=False, pin_factory=factory) 
+    button = Button(BUTTON_PIN, pin_factory=factory) 
     
     # Stepper am Anfang deaktivieren
     enable_pin.on() 
