@@ -8,13 +8,13 @@ import fill_function as fill
 import hardware_config as cfg
 
 # --- 1. GLOBALE KONFIGURATION ---
+
+# WICHTIG: PIN-Zuweisung sofort nach Konfigurations-Import
 STEP_PIN = cfg.STEPPER_PINS["STEP"]
 DIR_PIN = cfg.STEPPER_PINS["DIR"]
 ENABLE_PIN = cfg.STEPPER_PINS["EN"]
 DELAY = cfg.STEP_DELAY 
-
-# KORREKTUR: BUTTON_PIN aus der Konfiguration laden
-BUTTON_PIN = cfg.SWITCH_PIN 
+BUTTON_PIN = cfg.SWITCH_PIN # <--- MUSS HIER DEFINIERT SEIN
 
 # Definierte Warteposition in Schritten von Home (Button) entfernt
 WAITING_STEPS = 2400 # 8 * 300 Schritte
@@ -31,7 +31,7 @@ try:
     # Starte die pigpio Factory
     _factory = PiGPIOFactory()
 
-    # Taster initialisieren (Nutzt jetzt die definierte BUTTON_PIN Variable)
+    # Taster initialisieren (Verwendet die jetzt definierte BUTTON_PIN Variable)
     _button = Button(BUTTON_PIN, pull_up=cfg.SWITCH_PULL, pin_factory=_factory) 
     
     print("Initialisierung abgeschlossen. Start bereit.")
