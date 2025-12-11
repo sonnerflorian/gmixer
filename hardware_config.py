@@ -18,8 +18,8 @@ SWITCH_ACTIVE_STATE = False
 
 # Servo-Pins je Getränk (BCM)
 SERVO_PINS = {
-    "Apfelsaft": 18,
-    "Wasser": 23,
+    "Apfelsaft": 10,
+    "Wasser": 22,
     "Johannisbeere": 27,
     # "Getränk4": 23,
     # "Getränk5": 18,
@@ -30,8 +30,8 @@ SERVO_PINS = {
 
 DRINK_POSITIONS = {
     "start": 0,
-    "Apfelsaft": 400,
-    "Wasser": 700,
+    "Apfelsaft": 300,
+    "Wasser": 600,
     "Johannisbeere": 1000,
     # "Getränk4": 1200,
     # "Getränk5": 2000,
