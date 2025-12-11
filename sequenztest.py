@@ -8,8 +8,8 @@ from gpiozero.pins.pigpio import PiGPIOFactory
 STEP_PIN = 16 
 DIR_PIN = 20
 ENABLE_PIN = 21
-DELAY = 0.002 # Verzögerung zwischen Pulsen (in Sekunden)
-STEPS_PER_REVOLUTION = 200
+DELAY = 0.0002 # Verzögerung zwischen Pulsen (in Sekunden)
+STEPS = 600
 
 SERVO_PINS = [26, 19, 13, 6, 5, 10, 27, 22]
 
@@ -85,7 +85,7 @@ try:
         print(f"START DURCHLAUF {i+1} von {len(SERVO_PINS)}")
         
         # TEIL 1: Stepper-Bewegung
-        move_stepper(STEPS_PER_REVOLUTION, True) # 200 Schritte vorwärts
+        move_stepper(STEPS, True) # 200 Schritte vorwärts
         
         # TEIL 2: Servo-Bewegung (0 -> 90 -> 0)
         print(f"-> Servo: Steuere Pin {pin}")
