@@ -12,7 +12,7 @@ STEP_DELAY = 0.001          # 1 ms
 # Taster-Konfiguration (für gpiozero Button)
 SWITCH_PIN = 2               
 # NEU: Wir nutzen den festen Pull-Up von GPIO 2
-SWITCH_PULL = True           dd
+SWITCH_PULL = True           
 # LOW (False) = gedrückt, da der Taster mit GND verbunden ist
 SWITCH_ACTIVE_STATE = False  
 
