@@ -60,7 +60,8 @@ def gpio_cleanup():
 
     print("Führe fill_function GPIO Cleanup aus...")
     
-    # 1. Alle Servos explizit stilllegen
+    # 1. Alle Servos explizit stilllegen (MUSS HIER REIN)
+    # Stoppt alle PWM-Signale garantiert.
     _silence_all_servos()
     
     # 2. Stepper-Pins schließen
@@ -80,7 +81,6 @@ def gpio_cleanup():
     _dir_pin = _step_pin = _en_pin = None
     print("Cleanup abgeschlossen.")
 
-
 def _raw_step(delay):
     """Erzeugt einen einzelnen Schrittpuls mit variablem Delay (für Ramping)."""
     if _step_pin is None:
@@ -96,26 +96,26 @@ def _step_once():
     """Erzeugt einen einzelnen Schrittpuls mit fixem Delay."""
     _raw_step(STEP_DELAY)
 
-# def _silence_all_servos():
-#     """NEU: Erzwingt, dass alle definierten Servo-Pins in einen sicheren, abgetrennten Zustand versetzt werden."""
-#     global _factory
-#     if _factory is None:
-#         return 
+def _silence_all_servos():
+    """NEU: Erzwingt, dass alle definierten Servo-Pins in einen sicheren, abgetrennten Zustand versetzt werden."""
+    global _factory
+    if _factory is None:
+        return 
 
-#     print("Silencing all defined servo pins...")
+    print("Silencing all defined servo pins...")
 
-#     for pin in SERVO_PINS.values():
-#         servo = None
-#         try:
-#             # Wir müssen für jeden Pin ein Objekt erstellen, um detach/close aufzurufen
-#             servo = Servo(pin, pin_factory=_factory)
-#             servo.detach() # Stellt sicher, dass kein PWM-Signal mehr gesendet wird
-#         except Exception:
-#             pass # Fehler ignorieren
-#         finally:
-#             if servo is not None:
-#                 servo.close()
-#     print("Alle Servo-Pins sind stillgelegt.")
+    for pin in SERVO_PINS.values():
+        servo = None
+        try:
+            # Wir müssen für jeden Pin ein Objekt erstellen, um detach/close aufzurufen
+            servo = Servo(pin, pin_factory=_factory)
+            servo.detach() # Stellt sicher, dass kein PWM-Signal mehr gesendet wird
+        except Exception:
+            pass # Fehler ignorieren
+        finally:
+            if servo is not None:
+                servo.close()
+    print("Alle Servo-Pins sind stillgelegt.")
     
 
 def move_steps(delta_steps: int):
