@@ -9,37 +9,33 @@ import hardware_config as cfg
 
 # --- 1. GLOBALE KONFIGURATION ---
 
-# Wir verwenden cfg.STEPPER_PINS[..] und cfg.SWITCH_PIN direkt, 
-# um NameError zu vermeiden.
-
-# Stepper-Konstanten
+# Stepper-Konstanten und Warteposition
 DELAY = cfg.STEP_DELAY 
-
-# Definierte Warteposition in Schritten von Home (Button) entfernt
 WAITING_STEPS = 2400 # 8 * 300 Schritte
 
-# Globale Variable für den Taster und die Factory
+# Globale Variable für den Taster und die Factory (NEU: Werden erst bei Bedarf gesetzt)
 _button = None
 _factory = None
 
-# -----------------------------------
-# --- 2. GERÄTE-SETUP ---
-# -----------------------------------
 
-try:
-    # Starte die pigpio Factory
-    _factory = PiGPIOFactory()
-
-    # Taster initialisieren
-    # KORREKTUR: Verwende cfg.SWITCH_PIN direkt, um den NameError zu umgehen
-    _button = Button(cfg.SWITCH_PIN, pull_up=cfg.SWITCH_PULL, pin_factory=_factory) 
+def _initialize_button():
+    """Initialisiert Button und Factory, falls noch nicht geschehen."""
+    global _factory, _button
     
-    print("Initialisierung abgeschlossen. Start bereit.")
+    if _button is not None:
+        return # Bereits initialisiert
 
-except Exception as e:
-    # Fehler wird hier abgefangen und ausgegeben
-    print(f"Fehler bei der Initialisierung: {e}")
-    sys.exit(1)
+    try:
+        _factory = PiGPIOFactory()
+        
+        # NEU: Pin-Initialisierung in einer Funktion, um NameError zu vermeiden
+        _button = Button(cfg.SWITCH_PIN, pull_up=cfg.SWITCH_PULL, pin_factory=_factory) 
+        
+        print("Taster-Initialisierung erfolgreich.")
+
+    except Exception as e:
+        print(f"Fehler bei der Taster-Initialisierung: {e}")
+        sys.exit(1)
 
 
 # -----------------------------------
@@ -50,6 +46,9 @@ def move_stepper_until_button_pressed(direction=False):
     """
     Bewegt den Steppermotor mit Ramping, bis der Taster gedrückt wird.
     """
+    
+    # Sicherstellen, dass der Taster initialisiert ist
+    _initialize_button() 
     
     # 1. Prüfe, ob der Taster bereits gedrückt ist
     if _button.is_pressed:
@@ -66,6 +65,7 @@ def move_stepper_until_button_pressed(direction=False):
     current_delay = START_DELAY
     
     # Motor aktivieren und Richtung setzen
+    fill._setup_driver() # Stellt sicher, dass die Stepper-Pins bereit sind
     fill._en_pin.off()
     fill._dir_pin.value = direction 
     time.sleep(0.005) 
@@ -96,9 +96,6 @@ def move_stepper_until_button_pressed(direction=False):
 def home_stepper():
     """Führt Homing durch und fährt zur Warteposition."""
     
-    # 0. Setup der Stepper-Pins über fill_function
-    fill._setup_driver() 
-    
     # 1. Homing: Fährt in Richtung des Endschalters (BACKWARD)
     move_stepper_until_button_pressed(direction=cfg.STEPPER_BACKWARD) 
 
@@ -122,7 +119,7 @@ def home_stepper():
 
 def gpio_cleanup():
     """Schließt alle lokalen Ressourcen (Button) und ruft das globale Cleanup auf."""
-    global _button
+    global _button, _factory
 
     # 1. Lokale Button-Ressourcen schließen
     if _button is not None:
@@ -131,9 +128,11 @@ def gpio_cleanup():
             print("-> Taster-Ressourcen erfolgreich freigegeben.")
         except Exception:
             pass 
+        _button = None # Setze zurück
 
     # 2. Globales Cleanup für Stepper/Factory aufrufen (falls nötig)
     fill.gpio_cleanup()
+    _factory = None # Setze Factory zurück
 
 
 # -----------------------------------
