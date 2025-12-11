@@ -9,7 +9,7 @@ STEP_PIN = 16
 DIR_PIN = 20
 ENABLE_PIN = 21
 DELAY = 0.0002 # Verzögerung zwischen Pulsen (in Sekunden)
-STEPS = 600
+STEPS = 1200
 
 SERVO_PINS = [26, 19, 13, 6, 5, 10, 27, 22]
 
@@ -101,7 +101,7 @@ try:
     
     counter = 0
     while counter < 8:    
-        move_stepper(STEPS_PER_REVOLUTION, False) # 200 Schritte rückwärts
+        move_stepper(STEPS, False) # 200 Schritte rückwärts
         counter += 1
         print(counter)
 
