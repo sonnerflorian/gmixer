@@ -105,7 +105,7 @@ def move_steps(delta_steps: int):
     _setup_driver() # Muss immer vor Bewegung initialisiert werden
         
     # Richtung setzen
-    direction = cfg.STEPPER_BACKWARD if delta_steps > 0 else cfg.STEPPER_FORWARD
+    direction = cfg.STEPPER_BACKWARD if delta_steps > 0 else cfg.STEPPER_BACKWARD
     _dir_pin.value = direction 
     
     # Schritte ausführen
