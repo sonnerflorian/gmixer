@@ -106,7 +106,7 @@ def _ramp_move_until_pressed():
     for _ in range(5): 
         fill._raw_step(0.005) 
     
-    fill._en_pin.on()
+    fill._en_pin.on() # Deaktiviert den Motor nach Backlash!
     time.sleep(0.1)
 
 
@@ -122,6 +122,10 @@ def home_stepper():
     try:
         # 1. Homing: Fährt in Richtung des Endschalters
         _ramp_move_until_pressed() 
+        
+        # NEUE AKTIVIERUNG: Muss den Motor re-aktivieren, nachdem _ramp_move_until_pressed ihn deaktiviert hat
+        fill._en_pin.off() 
+        time.sleep(0.05) 
 
         # 2. Zurückfahren auf die Warteposition (2400 Schritte)
         print(f"--- Fahren zur Warteposition ({WAITING_STEPS} Schritte) ---")
