@@ -1,7 +1,7 @@
 # gmixer/hardware_config.py
 
 # Die Pins (BCM) bleiben gleich
-STEPPER_PINS = {"DIR": 16, "STEP": 20, "EN": 21}
+STEPPER_PINS = {"DIR": 20, "STEP": 16, "EN": 21}
 
 # NEU: Boolesche Werte für die Richtung (True/False)
 # True/False wird von gpiozero OutputDevice(pin).value = direction verwendet.
@@ -12,7 +12,7 @@ STEP_DELAY = 0.001          # 1 ms
 # Taster-Konfiguration (für gpiozero Button)
 SWITCH_PIN = 2               
 # NEU: Wir nutzen den festen Pull-Up von GPIO 2
-SWITCH_PULL = True           
+SWITCH_PULL = True           dd
 # LOW (False) = gedrückt, da der Taster mit GND verbunden ist
 SWITCH_ACTIVE_STATE = False  
 
