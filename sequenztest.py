@@ -1,8 +1,7 @@
 import time
-# Importiere gpiozero Klassen
-from gpiozero import OutputDevice, Servo
-# Der Stepper wird hier als einfacher Pulsgeber und Richtungsausgabe behandelt
-from gpiozero.tools import digital_thread
+# Importiere nur die benötigten Klassen von gpiozero
+from gpiozero import OutputDevice, Servo 
+# 'digital_thread' wurde entfernt, da es nicht benötigt wird und den Fehler verursacht hat.
 
 # --- 1. GLOBALE KONFIGURATION ---
 
@@ -17,28 +16,22 @@ STEPS_PER_REVOLUTION = 200 # Schritte für 1 volle Umdrehung
 SERVO_PINS = [26, 19, 13, 6, 5, 17, 27, 22]
 
 # -----------------------------------
-# --- 2. GERÄTE-SETUP (ersetzt GPIO.setup) ---
+# --- 2. GERÄTE-SETUP ---
 # -----------------------------------
 
 # Stepper-Geräte initialisieren
-# OutputDevice ist perfekt für DIR und ENABLE
 dir_pin = OutputDevice(DIR_PIN)
 enable_pin = OutputDevice(ENABLE_PIN)
-step_pin = OutputDevice(STEP_PIN) # Wird später für die Puls-Funktion verwendet
+step_pin = OutputDevice(STEP_PIN) 
 
 # Servo-Geräte initialisieren
-# Die Servo-Klasse kümmert sich um PWM (50Hz) und die Duty-Cycle-Berechnung
-# Das Dictionary speichert die Servo-Objekte
 servos = {}
 for pin in SERVO_PINS:
-    # Die gpiozero Servo Klasse nimmt standardmäßig 50Hz und konvertiert Winkel/Werte automatisch
     servos[pin] = Servo(pin) 
-    # Setze Servo initial in den 'deaktivierten' Zustand (keine PWM-Pulse, kein Zittern)
-    servos[pin].detach() 
+    servos[pin].detach() # Deaktiviert das PWM-Signal initial
     
-# Steppermotor am Anfang deaktivieren (ENABLE ist hier eine boolesche Invertierung des OutputDevice)
-# Bei A4988 ist LOW = AN, HIGH = AUS. OutputDevice(active_high=False) macht es einfacher.
-enable_pin.on() # .on() setzt den Pin auf HIGH (Deaktiviert den Treiber)
+# Steppermotor am Anfang deaktivieren (enable_pin.on() setzt HIGH = AUS)
+enable_pin.on() 
 print("Initialisierung abgeschlossen. Geräte bereit.")
 
 # -----------------------------------
@@ -48,17 +41,13 @@ print("Initialisierung abgeschlossen. Geräte bereit.")
 def set_servo_angle(servo_obj, angle):
     """Bewegt den Servo zu einem Winkel und deaktiviert das Signal wieder."""
     
-    # 1. Servo aktivieren und Winkel setzen
-    # gpiozero verwendet einen Wert von -1 (entspricht 0 Grad) bis +1 (entspricht 180 Grad)
-    # Winkel 0 Grad -> Wert -1
-    # Winkel 90 Grad -> Wert 0
-    # Berechne den gpiozero-Wert: value = (angle / 90.0) - 1.0
+    # Berechne den gpiozero-Wert: value von -1.0 (0 Grad) bis +1.0 (180 Grad)
     value = (angle / 90.0) - 1.0
     
     servo_obj.value = value
     time.sleep(0.5) # Wartezeit für die Bewegung
     
-    # 2. Signal trennen (Deaktivieren) um Zittern zu vermeiden
+    # Signal trennen (Deaktivieren) um Zittern zu vermeiden
     servo_obj.detach() 
 
 def move_stepper(steps, direction):
@@ -68,12 +57,11 @@ def move_stepper(steps, direction):
     # 1. Motor aktivieren (enable_pin.off() setzt auf LOW)
     enable_pin.off()
     
-    # 2. Richtung setzen (True/False wird automatisch auf HIGH/LOW abgebildet)
+    # 2. Richtung setzen 
     dir_pin.value = direction 
     time.sleep(0.005) 
     
-    # 3. Schritte ausführen: Nutzt die pulse-Methode von OutputDevice
-    # Wir senden die halbe Anzahl der Pulse, da 'pulse' HIGH und LOW automatisch regelt.
+    # 3. Schritte ausführen: Nutzt die pulse-Methode, die stabiler ist
     step_pin.pulse(
         n=steps, 
         duration=DELAY * 2, # Gesamtdauer eines HIGH-LOW-Zyklus
@@ -124,10 +112,7 @@ except KeyboardInterrupt:
 finally:
     print("Führe GPIO-Cleanup aus.")
     
-    # 5. AUFRÄUMEN (Mit gpiozero entfällt GPIO.cleanup())
-    
-    # Alle Geräte werden automatisch beendet/freigegeben, wenn das Skript endet.
-    # Wir stellen nur sicher, dass der Stepper deaktiviert ist:
+    # 5. AUFRÄUMEN
+    # Sicherstellen, dass der Stepper deaktiviert ist
     enable_pin.on()
-    
-    # Die Geräte-Objekte werden beim Beenden des Skripts automatisch freigegeben (close()).
+    # gpiozero schließt alle Geräte automatisch
