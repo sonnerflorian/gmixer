@@ -11,6 +11,14 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import fill_function as fill
 
+
+def set_servo_angle(servo_obj, angle):
+    """Bewegt den Servo zu einem Winkel und deaktiviert das Signal wieder."""
+    value = (angle / 90.0) - 1.0
+    servo_obj.value = value
+    time.sleep(0.5) 
+    servo_obj.detach() 
+
 def main():
     # Wir vertrauen der Position aus Homing (2400)
     
