@@ -25,19 +25,6 @@ try:
     servo.value = 0.8
     time.sleep(2)
 
-    # Stoppen
-    print("Stopp!")
-    servo.value = 0.0
-    time.sleep(2)
-
-    # Rückwärts drehen
-    print("Drehe rückwärts...")
-    servo.value = -0.5
-    time.sleep(2)
-
-    # Signal trennen (verhindert 'Kriechen' im Stand)
-    print("Trenne Signal (Sicherer Stopp)")
-    servo.detach()
 
 finally:
     servo.close()
