@@ -18,7 +18,7 @@ try:
 
     # Vorwärts drehen
     print("Drehe vorwärts (langsam)...")
-    servo.value = 0.2
+    servo.value = -1
     time.sleep(2)
 
     print("Drehe vorwärts (schnell)...")
