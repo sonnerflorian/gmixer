@@ -32,9 +32,9 @@ def main():
         print("Gieße Johannisbeere...")
         
         # Nutze das bereits existierende Objekt
-        set_servo_stable(servos["Johannisbeere"], 90) # Auf
+        set_servo_stable(servos["Johannisbeere"], 130) # Auf
         time.sleep(0.7) # dwell
-        set_servo_stable(servos["Johannisbeere"], 0)  # Zu
+        set_servo_stable(servos["Johannisbeere"], 90)  # Zu
         
         time.sleep(0.5)
 
@@ -42,7 +42,7 @@ def main():
         fill.move_to_drink("Wasser")
         print("Gieße Wasser...")
         
-        set_servo_stable(servos["Wasser"], 90) # Auf
+        set_servo_stable(servos["Wasser"], 130) # Auf
         time.sleep(0.7) # dwell
         set_servo_stable(servos["Wasser"], 0)  # Zu
 
