@@ -9,8 +9,8 @@ SERVO_PIN = 26
 # Wir nutzen weite Pulsweiten, um sicherzustellen, dass wir 
 # den vollen Geschwindigkeitsbereich erreichen.
 servo = Servo(SERVO_PIN, 
-              min_pulse_width=0.0005, 
-              max_pulse_width=0.0025, 
+              min_pulse_width=0.0000, 
+              max_pulse_width=0.0030, 
               pin_factory=factory)
 
 try:
