@@ -85,9 +85,9 @@ try:
         print(f"START DURCHLAUF {i+1} von {len(SERVO_PINS)}")
         
         # TEIL 1: Stepper-Bewegung
-        move_stepper(STEPS, True) # 200 Schritte vorwärts
+        move_stepper(STEPS, False) # 200 Schritte vorwärts
         
-        # TEIL 2: Servo-Bewegung (0 -> 90 -> 0)
+        # TEIL 2: Servo-Bewegung (0 -> 90 -> 0)ff
         print(f"-> Servo: Steuere Pin {pin}")
         
         set_servo_angle(servo_obj, 0) 
@@ -101,7 +101,7 @@ try:
     
     counter = 0
     while counter < 8:    
-        move_stepper(STEPS, False) # 200 Schritte rückwärts
+        move_stepper(STEPS, True) # 200 Schritte rückwärts
         counter += 1
         print(counter)
 
