@@ -4,7 +4,7 @@ import time
 
 factory = PiGPIOFactory()
 # Gib hier den Pin des Servos ein, den du gerade kalibrieren willst
-PIN = 26
+PIN = 19
 
 # Wir starten mit den Standard-Pulsweiten
 servo = Servo(PIN, min_pulse_width=0.0005, max_pulse_width=0.0025, pin_factory=factory)
