@@ -22,7 +22,7 @@ try:
     time.sleep(2)
 
     print("Drehe vorwärts (schnell)...")
-    servo.value = 0.8
+    servo.value = 1.2
     time.sleep(2)
 
 
