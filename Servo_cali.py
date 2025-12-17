@@ -7,7 +7,7 @@ factory = PiGPIOFactory()
 PIN = 19 
 
 # Wir starten mit den Standard-Pulsweiten
-servo = Servo(PIN, min_pulse_width=0.0005, max_pulse_width=0.0025, pin_factory=factory)
+servo = Servo(PIN, min_pulse_width=0.0001, max_pulse_width=0.0025, pin_factory=factory)
 
 print(f"Kalibrierung für Pin {PIN}")
 print("Steuerung: 'a' = +0.05, 's' = -0.05 | 'd' = +0.01, 'f' = -0.01")
