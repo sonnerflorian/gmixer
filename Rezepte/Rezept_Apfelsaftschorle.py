@@ -59,6 +59,7 @@ servo_wasser.detach()
 enable_pin.on()
 
 print("Initialisierung abgeschlossen. Geräte bereit.")
+delay(1)
 
 
 # ============================================================
