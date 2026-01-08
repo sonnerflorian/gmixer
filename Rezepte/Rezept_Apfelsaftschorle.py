@@ -15,8 +15,8 @@ DELAY = 0.0005  # Pulsdelay (sek) -> Geschwindigkeit (kleiner = schneller)
 DIR_SETTLE = 0.005
 
 # Servos (nur die zwei verwendeten)
-SERVO_APFEL_PIN = 26
-SERVO_WASSER_PIN = 19
+SERVO_APFEL_PIN = 5
+SERVO_WASSER_PIN = 17
 
 # Winkel
 CLOSE_ANGLE = 180

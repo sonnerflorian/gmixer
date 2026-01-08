@@ -16,13 +16,13 @@ DIR_SETTLE = 0.005
 
 # Servos (nur die zwei verwendeten)
 SERVO_APFEL_PIN = 5
-SERVO_WASSER_PIN = 19
+SERVO_WASSER_PIN = 17
 Servo_3_PIN = 13
 Servo_4_PIN = 26
 Servo_5_PIN = 18
 Servo_6_PIN = 22
 Servo_7_PIN = 27
-Servo_8_PIN = 17
+Servo_8_PIN = 19
 # Winkel
 CLOSE_ANGLE = 170
 OPEN_ANGLE = 60
