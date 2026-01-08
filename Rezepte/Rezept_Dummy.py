@@ -18,11 +18,11 @@ DIR_SETTLE = 0.005
 SERVO_APFEL_PIN = 26
 SERVO_WASSER_PIN = 19
 Servo_3_PIN = 13
-Servo_4_PIN = 12
-Servo_5_PIN = 25
-# Servo_6_PIN = 11
-# Servo_7_PIN = 9
-# Servo_8_PIN = 12
+Servo_4_PIN = 5
+Servo_5_PIN = 6
+Servo_6_PIN = 22
+Servo_7_PIN = 27
+Servo_8_PIN = 17
 
 # Winkel
 CLOSE_ANGLE = 170
@@ -39,9 +39,9 @@ POS_WASSER = 600
 POS_3 = 900
 POS_4 = 1200
 POS_5 = 1500
-# POS_6 = 1800
-# POS_7 = 2100
-# POS_8 = 2400
+POS_6 = 1800
+POS_7 = 2100
+POS_8 = 2400
 
 # Richtungskonvention:
 # Wenn der Stepper falsch herum läuft: FORWARD_DIR einfach umdrehen (True <-> False)
@@ -69,12 +69,12 @@ servo_4 = Servo(Servo_4_PIN, pin_factory=factory)
 servo_4.detach()
 servo_5 = Servo(Servo_5_PIN, pin_factory=factory)
 servo_5.detach()
-# servo_6 = Servo(Servo_6_PIN, pin_factory=factory)
-# servo_6.detach()
-# servo_7 = Servo(Servo_7_PIN, pin_factory=factory)
-# servo_7.detach()
-# servo_8 = Servo(Servo_8_PIN, pin_factory=factory)
-# servo_8.detach()
+servo_6 = Servo(Servo_6_PIN, pin_factory=factory)
+servo_6.detach()
+servo_7 = Servo(Servo_7_PIN, pin_factory=factory)
+servo_7.detach()
+servo_8 = Servo(Servo_8_PIN, pin_factory=factory)
+servo_8.detach()
 
 
 # Stepper deaktivieren (A4988 typisch: HIGH = aus)
@@ -186,6 +186,22 @@ def main():
     print("-> Dummy Drink 5")
     pour(servo_5, OPEN_TIME)
     time.sleep(0.6)
+
+    move_to(POS_6)
+    print("-> Dummy Drink 5")
+    pour(servo_6, OPEN_TIME)
+    time.sleep(0.6)
+
+    move_to(POS_7)
+    print("-> Dummy Drink 5")
+    pour(servo_7, OPEN_TIME)
+    time.sleep(0.6)
+
+    move_to(POS_8)
+    print("-> Dummy Drink 5")
+    pour(servo_8, OPEN_TIME)
+    time.sleep(0.6)
+    
     # pour(servo_4, WASSER_OPEN_TIME)
     # time.sleep(0.6)
     # pour(servo_5, WASSER_OPEN_TIME)
