@@ -47,38 +47,6 @@ def _setup_driver():
         raise
 
 
-# def gpio_cleanup():
-#     """
-#     Führt ein sauberes Herunterfahren aller Stepper/Factory-Ressourcen durch.
-#     """
-#     global _gpio_devices, _factory, _en_pin, _dir_pin, _step_pin
-    
-#     if _factory is None:
-#         return 
-
-#     print("Führe fill_function GPIO Cleanup aus...")
-    
-#     # 1. Alle Servos explizit stilllegen (MUSS HIER REIN)
-#     # Stoppt alle PWM-Signale garantiert.
-#     _silence_all_servos()
-    
-#     # 2. Stepper-Pins schließen
-#     if _en_pin is not None:
-#         _en_pin.on() # Treiber deaktivieren (Sicherheit)
-    
-#     for device in _gpio_devices:
-#         if device is not None:
-#             try:
-#                 device.close()
-#             except Exception:
-#                 pass
-                
-#     # Globale Zustände zurücksetzen
-#     _gpio_devices = []
-#     _factory = None
-#     _dir_pin = _step_pin = _en_pin = None
-#     print("Cleanup abgeschlossen.")
-
 def _raw_step(delay):
     """Erzeugt einen einzelnen Schrittpuls mit variablem Delay (für Ramping)."""
     if _step_pin is None:
@@ -93,27 +61,6 @@ def _raw_step(delay):
 def _step_once():
     """Erzeugt einen einzelnen Schrittpuls mit fixem Delay."""
     _raw_step(STEP_DELAY)
-
-# def _silence_all_servos():
-#     """NEU: Erzwingt, dass alle definierten Servo-Pins in einen sicheren, abgetrennten Zustand versetzt werden."""
-#     global _factory
-#     if _factory is None:
-#         return 
-
-#     print("Silencing all defined servo pins...")
-
-#     for pin in SERVO_PINS.values():
-#         servo = None
-#         try:
-#             # Wir müssen für jeden Pin ein Objekt erstellen, um detach/close aufzurufen
-#             servo = Servo(pin, pin_factory=_factory)
-#             servo.detach() # Stellt sicher, dass kein PWM-Signal mehr gesendet wird
-#         except Exception:
-#             pass # Fehler ignorieren
-#         finally:
-#             if servo is not None:
-#                 servo.close()
-#     print("Alle Servo-Pins sind stillgelegt.")
     
 
 def move_steps(delta_steps: int):
@@ -150,54 +97,43 @@ def move_steps(delta_steps: int):
 def move_to_position(target_steps: int):
     move_steps(target_steps - current_position)
 
-# def move_to_drink(drink_name: str):
-#     if drink_name not in DRINK_POSITIONS:
-#         raise KeyError(f"Unbekanntes Getränk: {drink_name}")
-    
-#     _setup_driver() 
-#     try:
-#         move_to_position(-DRINK_POSITIONS[drink_name])
-#     finally:
-#         pass 
 
-# gmixer/fill_function.py (Ersetze die Funktion pour_with_servo)
-
-def pour_with_servo(servo_pin: int, forward_angle: float = 180, dwell: float = 0.5):
-    """Steuert das Servo-Ventil. Stellt sicher, dass der Stepper deaktiviert ist."""
+# def pour_with_servo(servo_pin: int, forward_angle: float = 180, dwell: float = 0.5):
+#     """Steuert das Servo-Ventil. Stellt sicher, dass der Stepper deaktiviert ist."""
     
-    _setup_driver()
+#     _setup_driver()
     
-    # 1. Software-Trennung des Steppers
-    global _en_pin
-    if _en_pin is not None and _en_pin.value == False:
-        _en_pin.on()           
-        time.sleep(0.01)       
+#     # 1. Software-Trennung des Steppers
+#     global _en_pin
+#     if _en_pin is not None and _en_pin.value == False:
+#         _en_pin.on()           
+#         time.sleep(0.01)       
             
-    # Wir initialisieren NUR den Servo-Pin, den wir benötigen.
-    servo = None
+#     # Wir initialisieren NUR den Servo-Pin, den wir benötigen.
+#     servo = None
     
-    try:
-        # 2. Servo-Aktivierung und Betrieb
-        # Initialisiere nur den aktiven Servo
-        servo = Servo(servo_pin, pin_factory=_factory) 
+#     try:
+#         # 2. Servo-Aktivierung und Betrieb
+#         # Initialisiere nur den aktiven Servo
+#         servo = Servo(servo_pin, pin_factory=_factory) 
         
-        print(f"-> Servo: Starte Pin {servo_pin}")
+#         print(f"-> Servo: Starte Pin {servo_pin}")
 
-        # Servo öffnen
-        servo_value = (forward_angle / 90.0) - 1.0 
+#         # Servo öffnen
+#         servo_value = (forward_angle / 90.0) - 1.0 
         
-        servo.value = servo_value
-        time.sleep(0.3)
+#         servo.value = servo_value
+#         time.sleep(0.3)
         
-        if dwell > 0:
-            time.sleep(dwell)
+#         if dwell > 0:
+#             time.sleep(dwell)
         
-        # Servo schließen
-        servo.min() 
-        time.sleep(0.3)
+#         # Servo schließen
+#         servo.min() 
+#         time.sleep(0.3)
         
-    finally:
-        # Sauberes Aufräumen des aktiven Servos
-        if servo is not None:
-            servo.detach() # Stoppt das PWM-Signal auf DIESEM Pin
-            servo.close()
+#     finally:
+#         # Sauberes Aufräumen des aktiven Servos
+#         if servo is not None:
+#             servo.detach() # Stoppt das PWM-Signal auf DIESEM Pin
+#             servo.close()

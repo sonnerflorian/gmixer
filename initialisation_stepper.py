@@ -90,9 +90,6 @@ def gpio_cleanup():
             pass
         _button = None
 
-    # 2. Ruft das globale Cleanup auf
-    # fill.gpio_cleanup()
-    # _factory = None
 
 
 # -----------------------------------
