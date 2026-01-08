@@ -1,39 +1,125 @@
 
-## gmixer/Rezepte/Rezept_Apfelsaftschorle.py
-
+# gmixer/Rezepte/Rezept_Apfelsaftschorle.py
 import time
-import sys
-import os
 
-# Füge das übergeordnete Verzeichnis zum Systempfad hinzu, 
-# damit fill_function gefunden werden kann
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import hardware_config as hw
+from gpiozero import OutputDevice, Servo
 
-import fill_function as fill
+# Optional: ruhigeres Servo-PWM mit pigpio
+try:
+    from gpiozero.pins.pigpio import PiGPIOFactory
+    _PIGPIO_FACTORY = PiGPIOFactory()
+except Exception:
+    _PIGPIO_FACTORY = None
 
 
-def set_servo_angle(servo_obj, angle):
-    """Bewegt den Servo zu einem Winkel und deaktiviert das Signal wieder."""
-    value = (angle / 90.0) - 1.0
-    servo_obj.value = value
-    time.sleep(0.5) 
-    servo_obj.detach() 
+# ------------------------------------------------------------
+# Hilfsfunktionen
+# ------------------------------------------------------------
+def _make_output(pin: int) -> OutputDevice:
+    return OutputDevice(pin, initial_value=False)
 
+
+def _make_servo(pin: int) -> Servo:
+    if _PIGPIO_FACTORY is not None:
+        return Servo(pin, pin_factory=_PIGPIO_FACTORY)
+    return Servo(pin)
+
+
+def set_servo_angle(servo: Servo, angle: float) -> None:
+    """
+    Mapping:
+    0°   -> -1
+    90°  ->  0
+    180° ->  1
+    """
+    servo.value = (angle / 90.0) - 1.0
+
+
+def pour_with_servo(
+    servo_pin: int,
+    dwell: float = 0.7,
+    open_angle: float = 90.0,
+    close_angle: float = 0.0,
+):
+    servo = _make_servo(servo_pin)
+    try:
+        set_servo_angle(servo, open_angle)
+        time.sleep(float(dwell))
+        set_servo_angle(servo, close_angle)
+        time.sleep(0.4)
+    finally:
+        servo.close()
+
+
+# ------------------------------------------------------------
+# Stepper (ohne Homing!)
+# ------------------------------------------------------------
+class Stepper:
+    def __init__(self):
+        self.dir = _make_output(hw.STEPPER_PINS["DIR"])
+        self.step = _make_output(hw.STEPPER_PINS["STEP"])
+        self.en = _make_output(hw.STEPPER_PINS["EN"])
+        self.step_delay = float(hw.STEP_DELAY)
+
+        # A4988 typisch: EN LOW = enabled
+        self.en.on()  # deaktiviert
+        self.position_steps = hw.DRINK_POSITIONS.get("start", 0)
+
+    def enable(self):
+        self.en.off()
+
+    def disable(self):
+        self.en.on()
+
+    def do_steps(self, direction: bool, steps: int):
+        if steps <= 0:
+            return
+
+        self.dir.value = bool(direction)
+
+        for _ in range(steps):
+            self.step.on()
+            time.sleep(self.step_delay)
+            self.step.off()
+            time.sleep(self.step_delay)
+
+        if direction == hw.STEPPER_FORWARD:
+            self.position_steps += steps
+        else:
+            self.position_steps -= steps
+
+    def move_to(self, target_steps: int):
+        delta = target_steps - self.position_steps
+        if delta == 0:
+            return
+
+        direction = hw.STEPPER_FORWARD if delta > 0 else hw.STEPPER_BACKWARD
+        self.do_steps(direction, abs(delta))
+
+
+# ------------------------------------------------------------
+# Rezept: Apfelsaftschorle
+# ------------------------------------------------------------
 def main():
-    # Wir vertrauen der Position aus Homing (2400)
-    
-    # 1. Apfelsaft (Target Pos: 0)
-    fill.move_to_drink("Apfelsaft")
-    fill.pour_with_servo(fill.SERVO_PINS["Apfelsaft"], dwell=0.7)
+    stepper = Stepper()
+    stepper.enable()
+
+    # 1) Apfelsaft
+    stepper.move_to(hw.DRINK_POSITIONS["Apfelsaft"])
+    pour_with_servo(hw.SERVO_PINS["Apfelsaft"], dwell=0.7)
     time.sleep(0.5)
 
-    # 2. Wasser (Target Pos: 800)
-    fill.move_to_drink("Wasser")
-    fill.pour_with_servo(fill.SERVO_PINS["Wasser"], dwell=0.7)
+    # 2) Wasser
+    stepper.move_to(hw.DRINK_POSITIONS["Wasser"])
+    pour_with_servo(hw.SERVO_PINS["Wasser"], dwell=0.7)
     time.sleep(0.5)
 
-    # 3. Zurück zur Warteposition (2400 Schritte)
-    fill.move_to_drink("start") 
+    # 3) Zurück zur Startposition
+    stepper.move_to(hw.DRINK_POSITIONS["start"])
+
+    stepper.disable()
+
 
 if __name__ == "__main__":
     main()
