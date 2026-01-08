@@ -7,7 +7,7 @@ import hardware_config as cfg
 # Konfiguration aus hardware_config
 PINS = cfg.STEPPER_PINS
 #DRINK_POSITIONS = cfg.DRINK_POSITIONS
-SERVO_PINS = cfg.SERVO_PINS
+# SERVO_PINS = cfg.SERVO_PINS
 STEP_DELAY = cfg.STEP_DELAY
 current_position = 0
 
@@ -96,26 +96,26 @@ def _step_once():
     """Erzeugt einen einzelnen Schrittpuls mit fixem Delay."""
     _raw_step(STEP_DELAY)
 
-def _silence_all_servos():
-    """NEU: Erzwingt, dass alle definierten Servo-Pins in einen sicheren, abgetrennten Zustand versetzt werden."""
-    global _factory
-    if _factory is None:
-        return 
+# def _silence_all_servos():
+#     """NEU: Erzwingt, dass alle definierten Servo-Pins in einen sicheren, abgetrennten Zustand versetzt werden."""
+#     global _factory
+#     if _factory is None:
+#         return 
 
-    print("Silencing all defined servo pins...")
+#     print("Silencing all defined servo pins...")
 
-    for pin in SERVO_PINS.values():
-        servo = None
-        try:
-            # Wir müssen für jeden Pin ein Objekt erstellen, um detach/close aufzurufen
-            servo = Servo(pin, pin_factory=_factory)
-            servo.detach() # Stellt sicher, dass kein PWM-Signal mehr gesendet wird
-        except Exception:
-            pass # Fehler ignorieren
-        finally:
-            if servo is not None:
-                servo.close()
-    print("Alle Servo-Pins sind stillgelegt.")
+#     for pin in SERVO_PINS.values():
+#         servo = None
+#         try:
+#             # Wir müssen für jeden Pin ein Objekt erstellen, um detach/close aufzurufen
+#             servo = Servo(pin, pin_factory=_factory)
+#             servo.detach() # Stellt sicher, dass kein PWM-Signal mehr gesendet wird
+#         except Exception:
+#             pass # Fehler ignorieren
+#         finally:
+#             if servo is not None:
+#                 servo.close()
+#     print("Alle Servo-Pins sind stillgelegt.")
     
 
 def move_steps(delta_steps: int):
