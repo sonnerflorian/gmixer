@@ -52,7 +52,9 @@ servo_apfel = Servo(SERVO_APFEL_PIN, pin_factory=factory)
 servo_wasser = Servo(SERVO_WASSER_PIN, pin_factory=factory)
 
 # Servos direkt freigeben (wie bei dir)
+servo_apfel.value = -1
 servo_apfel.detach()
+servo_wasser.value = -1
 servo_wasser.detach()
 
 # Stepper deaktivieren (A4988 typisch: HIGH = aus)
