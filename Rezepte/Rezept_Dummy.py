@@ -1,55 +1,74 @@
 import time
-import pigpio
+from gpiozero import Servo
+from gpiozero.pins.pigpio import PiGPIOFactory
 
-# ----------------------------
-# GPIO Pins der Servos
-# ----------------------------
-SERVO_APFEL = 26
-SERVO_WASSER = 19
+# --- KONFIG ---
+SERVO_APFEL_PIN = 26
+SERVO_WASSER_PIN = 19
 
-# Pulsweiten (ggf. feinjustieren!)
-PULSE_CLOSED = 1000   # 0°
-PULSE_OPEN   = 1500   # 90°
+OPEN_ANGLE = 90
+CLOSE_ANGLE = 0
 
-# Ausschankzeiten (Sekunden)
-TIME_APFEL  = 0.8
-TIME_WASSER = 0.8
+# "Ausschankzeit" = wie lange Ventil offen bleibt
+APFEL_OPEN_TIME = 0.8
+WASSER_OPEN_TIME = 0.8
+
+# --- SETUP (wie in deinem sequenztest.py) ---
+factory = PiGPIOFactory()
+
+servo_apfel = Servo(SERVO_APFEL_PIN, pin_factory=factory)
+servo_wasser = Servo(SERVO_WASSER_PIN, pin_factory=factory)
+
+# sicherheitshalber direkt "freigeben"
+servo_apfel.detach()
+servo_wasser.detach()
 
 
-def pour(pi, pin, duration):
-    """Öffnet Servo, wartet, schließt wieder"""
-    pi.set_servo_pulsewidth(pin, PULSE_OPEN)
-    time.sleep(duration)
-    pi.set_servo_pulsewidth(pin, PULSE_CLOSED)
-    time.sleep(0.4)
+def set_servo_angle(servo_obj: Servo, angle: float, settle: float = 0.4):
+    """
+    Bewegt den Servo zu einem Winkel und deaktiviert das Signal wieder (detach),
+    genau wie in deinem sequenztest.py. :contentReference[oaicite:1]{index=1}
+    """
+    value = (angle / 90.0) - 1.0  # 0°->-1, 90°->0, 180°->1
+    servo_obj.value = value
+    time.sleep(settle)
+    servo_obj.detach()
+
+
+def pour(servo_obj: Servo, open_time: float):
+    """Ventil auf -> offen halten -> zu (alles jeweils mit detach)"""
+    set_servo_angle(servo_obj, CLOSE_ANGLE)
+    time.sleep(0.2)
+
+    set_servo_angle(servo_obj, OPEN_ANGLE)
+    time.sleep(open_time)
+
+    set_servo_angle(servo_obj, CLOSE_ANGLE)
+    time.sleep(0.3)
 
 
 def main():
-    pi = pigpio.pi()
-    if not pi.connected:
-        raise RuntimeError("❌ pigpio daemon läuft nicht (sudo systemctl start pigpiod)")
+    print("Starte Apfelsaftschorle (nur 2 Servos, sequentiell).")
 
-    try:
-        # Start: beide Ventile sicher zu
-        pi.set_servo_pulsewidth(SERVO_APFEL, PULSE_CLOSED)
-        pi.set_servo_pulsewidth(SERVO_WASSER, PULSE_CLOSED)
-        time.sleep(0.5)
+    # 1) Apfelsaft
+    print("-> Apfelsaft Servo")
+    pour(servo_apfel, APFEL_OPEN_TIME)
 
-        # 1️⃣ Apfelsaft
-        pour(pi, SERVO_APFEL, TIME_APFEL)
+    time.sleep(0.6)  # kleine Pause zwischen den Komponenten
 
-        # kleine Pause
-        time.sleep(0.5)
+    # 2) Wasser
+    print("-> Wasser Servo")
+    pour(servo_wasser, WASSER_OPEN_TIME)
 
-        # 2️⃣ Wasser
-        pour(pi, SERVO_WASSER, TIME_WASSER)
-
-    finally:
-        # Servos freigeben (kein Summen)
-        pi.set_servo_pulsewidth(SERVO_APFEL, 0)
-        pi.set_servo_pulsewidth(SERVO_WASSER, 0)
-        pi.stop()
+    print("Fertig.")
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\nAbbruch durch Benutzer.")
+    finally:
+        # sicherheitshalber freigeben
+        servo_apfel.detach()
+        servo_wasser.detach()
