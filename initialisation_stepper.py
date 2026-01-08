@@ -13,7 +13,7 @@ import hardware_config as cfg
 WAITING_STEPS = 2500  # 8 * 300 Schritte
 
 # --- FEST DEFINIERTE SERVO-PINS (unabhängig von hardware_config) ---
-SERVO_PINS = [26, 19, 13, 6, 5, 10, 27, 22]
+SERVO_PINS = [17, 5, 22, 26, 27, 18, 13, 19]
 
 # Globale Variable für Button und Factory
 _button = None
