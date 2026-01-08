@@ -15,8 +15,8 @@ DELAY = 0.0005  # Pulsdelay (sek) -> Geschwindigkeit (kleiner = schneller)
 DIR_SETTLE = 0.005
 
 # Servos (nur die zwei verwendeten)
-SERVO_APFEL_PIN = 5
-SERVO_WASSER_PIN = 17
+SERVO_APFEL_PIN = 17
+SERVO_WASSER_PIN = 5
 
 # Winkel
 CLOSE_ANGLE = 180
@@ -32,7 +32,6 @@ POS_START = 0
 POS_APFEL = 300
 POS_WASSER = 600
 
-# Richtungskonvention:
 # Wenn der Stepper falsch herum läuft: FORWARD_DIR einfach umdrehen (True <-> False)
 FORWARD_DIR = False
 BACKWARD_DIR = not FORWARD_DIR

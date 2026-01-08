@@ -130,6 +130,7 @@ def move_stepper(steps: int, direction: bool) -> None:
 
     # deaktivieren (HIGH = aus)
     enable_pin.on()
+    
     time.sleep(0.1)
 
 
