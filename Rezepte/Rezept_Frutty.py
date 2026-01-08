@@ -29,8 +29,8 @@ WASSER_OPEN_TIME = 0.8
 # Stepper-Positionen in SCHRITTEN (Beispielwerte!)
 # start = 0; Apfel = +X; Wasser = +Y
 POS_START = 0
-POS_APFEL = 300
-POS_WASSER = 600
+POS_APFEL = 1800
+POS_WASSER = 1200
 
 # Wenn der Stepper falsch herum läuft: FORWARD_DIR einfach umdrehen (True <-> False)
 FORWARD_DIR = False
