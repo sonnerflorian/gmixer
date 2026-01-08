@@ -19,7 +19,7 @@ SERVO_APFEL_PIN = 26
 SERVO_WASSER_PIN = 19
 Servo_3_PIN = 13
 Servo_4_PIN = 12
-# Servo_5_PIN = 5
+Servo_5_PIN = 9
 # Servo_6_PIN = 11
 # Servo_7_PIN = 9
 # Servo_8_PIN = 12
@@ -38,6 +38,10 @@ POS_APFEL = 300
 POS_WASSER = 600
 POS_3 = 900
 POS_4 = 1200
+POS_5 = 1500
+# POS_6 = 1800
+# POS_7 = 2100
+# POS_8 = 2400
 
 # Richtungskonvention:
 # Wenn der Stepper falsch herum läuft: FORWARD_DIR einfach umdrehen (True <-> False)
@@ -63,8 +67,8 @@ servo_3 = Servo(Servo_3_PIN, pin_factory=factory)
 servo_3.detach()
 servo_4 = Servo(Servo_4_PIN, pin_factory=factory)
 servo_4.detach()
-# servo_5 = Servo(Servo_5_PIN, pin_factory=factory)
-# servo_5.detach()
+servo_5 = Servo(Servo_5_PIN, pin_factory=factory)
+servo_5.detach()
 # servo_6 = Servo(Servo_6_PIN, pin_factory=factory)
 # servo_6.detach()
 # servo_7 = Servo(Servo_7_PIN, pin_factory=factory)
@@ -176,6 +180,11 @@ def main():
     move_to(POS_4)
     print("-> Dummy Drink 4")
     pour(servo_4, OPEN_TIME)
+    time.sleep(0.6)
+
+    move_to(POS_5)
+    print("-> Dummy Drink 5")
+    pour(servo_5, OPEN_TIME)
     time.sleep(0.6)
     # pour(servo_4, WASSER_OPEN_TIME)
     # time.sleep(0.6)
