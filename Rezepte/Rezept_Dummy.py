@@ -18,25 +18,25 @@ DIR_SETTLE = 0.005
 SERVO_APFEL_PIN = 26
 SERVO_WASSER_PIN = 19
 Servo_3_PIN = 13
-Servo_4_PIN = 6
-Servo_5_PIN = 5
-Servo_6_PIN = 11
-Servo_7_PIN = 9
-Servo_8_PIN = 12
+# Servo_4_PIN = 6
+# Servo_5_PIN = 5
+# Servo_6_PIN = 11
+# Servo_7_PIN = 9
+# Servo_8_PIN = 12
 
 # Winkel
-CLOSE_ANGLE = 180
+CLOSE_ANGLE = 170
 OPEN_ANGLE = 60
 
 # "Ausschankzeit" (wie lange offen)
-APFEL_OPEN_TIME = 0.8
-WASSER_OPEN_TIME = 0.8
+OPEN_TIME = 0.8
 
 # Stepper-Positionen in SCHRITTEN (Beispielwerte!)
 # start = 0; Apfel = +X; Wasser = +Y
 POS_START = 0
 POS_APFEL = 300
 POS_WASSER = 600
+PoS_3 = 900
 
 # Richtungskonvention:
 # Wenn der Stepper falsch herum läuft: FORWARD_DIR einfach umdrehen (True <-> False)
@@ -48,7 +48,7 @@ BACKWARD_DIR = not FORWARD_DIR
 # 2) SETUP (Factory + Geräte, wie in sequenztest.py)
 # ============================================================
 
-factory = PiGPIOFactory()  # nutzt pigpiod (localhost:8888)
+factory = PiGPIOFactory() 
 
 dir_pin = OutputDevice(DIR_PIN, pin_factory=factory)
 enable_pin = OutputDevice(ENABLE_PIN, pin_factory=factory)
@@ -60,16 +60,16 @@ servo_wasser = Servo(SERVO_WASSER_PIN, pin_factory=factory)
 servo_wasser.detach()
 servo_3 = Servo(Servo_3_PIN, pin_factory=factory)
 servo_3.detach()
-servo_4 = Servo(Servo_4_PIN, pin_factory=factory)
-servo_4.detach()
-servo_5 = Servo(Servo_5_PIN, pin_factory=factory)
-servo_5.detach()
-servo_6 = Servo(Servo_6_PIN, pin_factory=factory)
-servo_6.detach()
-servo_7 = Servo(Servo_7_PIN, pin_factory=factory)
-servo_7.detach()
-servo_8 = Servo(Servo_8_PIN, pin_factory=factory)
-servo_8.detach()
+# servo_4 = Servo(Servo_4_PIN, pin_factory=factory)
+# servo_4.detach()
+# servo_5 = Servo(Servo_5_PIN, pin_factory=factory)
+# servo_5.detach()
+# servo_6 = Servo(Servo_6_PIN, pin_factory=factory)
+# servo_6.detach()
+# servo_7 = Servo(Servo_7_PIN, pin_factory=factory)
+# servo_7.detach()
+# servo_8 = Servo(Servo_8_PIN, pin_factory=factory)
+# servo_8.detach()
 
 
 # Stepper deaktivieren (A4988 typisch: HIGH = aus)
@@ -157,27 +157,29 @@ def main():
     # 1) zu Apfel fahren + ausschenken
     move_to(POS_APFEL)
     print("-> Apfelsaft")
-    pour(servo_apfel, APFEL_OPEN_TIME)
+    pour(servo_apfel, OPEN_TIME)
 
     time.sleep(0.6)
 
     # 2) zu Wasser fahren + ausschenken
     move_to(POS_WASSER)
     print("-> Wasser")
-    pour(servo_wasser, WASSER_OPEN_TIME)
+    pour(servo_wasser, OPEN_TIME)
     time.sleep(0.6)
-    pour(servo_3, WASSER_OPEN_TIME)
+    move_to(PoS_3)
+    print("-> Dummy Drink 3")
+    pour(servo_3, OPEN_TIME)
     time.sleep(0.6)
-    pour(servo_4, WASSER_OPEN_TIME)
-    time.sleep(0.6)
-    pour(servo_5, WASSER_OPEN_TIME)
-    time.sleep(0.6)
-    pour(servo_6, WASSER_OPEN_TIME)
-    time.sleep(0.6)
-    pour(servo_7, WASSER_OPEN_TIME)
-    time.sleep(0.6)
-    pour(servo_8, WASSER_OPEN_TIME)
-    time.sleep(0.6)
+    # pour(servo_4, WASSER_OPEN_TIME)
+    # time.sleep(0.6)
+    # pour(servo_5, WASSER_OPEN_TIME)
+    # time.sleep(0.6)
+    # pour(servo_6, WASSER_OPEN_TIME)
+    # time.sleep(0.6)
+    # pour(servo_7, WASSER_OPEN_TIME)
+    # time.sleep(0.6)
+    # pour(servo_8, WASSER_OPEN_TIME)
+    # time.sleep(0.6)
     # 3) zurück zu Start
     move_to(POS_START)
     print("Fertig.")
