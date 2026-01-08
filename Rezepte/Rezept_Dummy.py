@@ -19,11 +19,10 @@ SERVO_APFEL_PIN = 26
 SERVO_WASSER_PIN = 19
 Servo_3_PIN = 13
 Servo_4_PIN = 5
-Servo_5_PIN = 12
+Servo_5_PIN = 18
 Servo_6_PIN = 22
 Servo_7_PIN = 27
 Servo_8_PIN = 17
-
 # Winkel
 CLOSE_ANGLE = 170
 OPEN_ANGLE = 60
