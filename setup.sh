@@ -1,86 +1,158 @@
 #!/bin/bash
+set -euo pipefail
 
-# --- Fehlerprüfung und Konfiguration ---
-set -e # Beende das Skript bei Fehlern sofort
+echo "🔧 GMixer Setup (Bookworm-kompatibel) startet..."
 
-# Hole das Installationsverzeichnis (wird der Ort sein, von dem aus das Skript gestartet wird)
-INSTALL_DIR=$(pwd) 
-USER_NAME=$(whoami)
+# ----------------------------
+# Helpers / User / Paths
+# ----------------------------
+if [[ "${EUID}" -ne 0 ]]; then
+  echo "❌ Bitte als root ausführen: sudo ./setup.sh"
+  exit 1
+fi
 
-echo "🔧 Installiere und konfiguriere Getränkemixer-System..."
+# Realer Nutzer (wenn via sudo gestartet), sonst root
+REAL_USER="${SUDO_USER:-root}"
+REAL_HOME="$(eval echo "~$REAL_USER")"
 
-# 1. System updaten und notwendige Pakete installieren
+# Installationsordner = Ordner dieser setup.sh (robust, egal wo du sie startest)
+INSTALL_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+MAIN_SCRIPT="${INSTALL_DIR}/main.py"
+ICON_PATH="${INSTALL_DIR}/icon.png"
+
+echo "📁 INSTALL_DIR: ${INSTALL_DIR}"
+echo "👤 REAL_USER:   ${REAL_USER}"
+echo "🏠 REAL_HOME:   ${REAL_HOME}"
+
+if [[ ! -f "${MAIN_SCRIPT}" ]]; then
+  echo "❌ main.py nicht gefunden unter: ${MAIN_SCRIPT}"
+  echo "   Lege main.py in den gleichen Ordner wie setup.sh oder passe MAIN_SCRIPT an."
+  exit 1
+fi
+
+# ----------------------------
+# 1) Pakete installieren
+# ----------------------------
 echo "📦 Installiere Systemabhängigkeiten..."
-sudo apt update
-# Installiere git, Python-Tools, Tkinter, pigpio-Daemon und gpiozero
-sudo apt install -y git python3 python3-pip python3-tk pigpio python3-gpiozero
+apt update
+apt install -y git python3 python3-pip python3-tk pigpio python3-gpiozero
 
+# Optional (nur wenn du wirklich GUI/VNC willst):
+# apt install -y raspberrypi-ui-mods
 
-# 2. VNC und Display-Rotation konfigurieren
-echo "⚙️ Konfiguriere Display und VNC..."
-# VNC aktivieren (non-interactive)
-sudo raspi-config nonint do_vnc 0
-
-# Display Rotation auf 270° setzen (display_rotate=3)
-CONFIG_FILE="/boot/config.txt"
-if [ -f /boot/firmware/config.txt ]; then
-    CONFIG_FILE="/boot/firmware/config.txt"
-fi
-
-if grep -q "display_rotate=" "$CONFIG_FILE"; then
-    sudo sed -i 's/display_rotate=.*/display_rotate=3/' "$CONFIG_FILE"
+# ----------------------------
+# 2) VNC aktivieren (wenn raspi-config vorhanden)
+# ----------------------------
+echo "⚙️ Konfiguriere VNC (falls möglich)..."
+if command -v raspi-config >/dev/null 2>&1; then
+  # 0 = enable
+  raspi-config nonint do_vnc 0 || true
 else
-    # Fügt die Zeile am Ende hinzu
-    echo "display_rotate=3" | sudo tee -a "$CONFIG_FILE" > /dev/null
+  echo "ℹ️ raspi-config nicht gefunden – überspringe VNC-Aktivierung."
 fi
 
-# 3. systemd Service für den Autostart erstellen
-SERVICE_PATH="/etc/systemd/system/gmixer.service"
-MAIN_SCRIPT_PATH="$INSTALL_DIR/main.py" 
+# ----------------------------
+# 3) Display Rotation konfigurieren (Bookworm: /boot/firmware/config.txt)
+# ----------------------------
+echo "🖥️ Setze Display-Rotation (display_rotate=3)..."
+CONFIG_FILE="/boot/firmware/config.txt"
+if [[ -f "/boot/config.txt" && ! -f "${CONFIG_FILE}" ]]; then
+  CONFIG_FILE="/boot/config.txt"
+fi
 
-echo "🛠️ Erstelle systemd Service ($SERVICE_PATH) für Autostart..."
-sudo tee $SERVICE_PATH > /dev/null <<EOF
+if [[ -f "${CONFIG_FILE}" ]]; then
+  if grep -qE '^\s*display_rotate=' "${CONFIG_FILE}"; then
+    sed -i 's/^\s*display_rotate=.*/display_rotate=3/' "${CONFIG_FILE}"
+  else
+    echo "" >> "${CONFIG_FILE}"
+    echo "# GMixer: rotate display 270°" >> "${CONFIG_FILE}"
+    echo "display_rotate=3" >> "${CONFIG_FILE}"
+  fi
+else
+  echo "⚠️ Konnte config.txt nicht finden – Rotation übersprungen."
+fi
+
+# ----------------------------
+# 4) systemd Service erstellen
+# ----------------------------
+echo "🛠️ Erstelle systemd Service gmixer.service..."
+SERVICE_PATH="/etc/systemd/system/gmixer.service"
+
+cat > "${SERVICE_PATH}" <<EOF
 [Unit]
 Description=GMixer Service
-After=network.target
+After=network-online.target
+Wants=network-online.target
 
 [Service]
-ExecStart=/usr/bin/python3 $MAIN_SCRIPT_PATH
-WorkingDirectory=$INSTALL_DIR
-StandardOutput=inherit
-StandardError=inherit
+Type=simple
+WorkingDirectory=${INSTALL_DIR}
+ExecStart=/usr/bin/python3 ${MAIN_SCRIPT}
 Restart=always
-User=$USER_NAME
+RestartSec=2
+User=${REAL_USER}
+Environment=PYTHONUNBUFFERED=1
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
-# 4. systemd Service und pigpiod Daemon aktivieren und starten
-echo "🚀 Aktiviere Autostart-Dienste (pigpiod, gmixer)..."
-sudo systemctl daemon-reload
-# Starte den pigpio-Daemon (notwendig für gpiozero/PiGPIOFactory)
-sudo systemctl enable pigpiod
-sudo systemctl start pigpiod
-# Starte den Gmixer-Service
-sudo systemctl enable gmixer.service
-sudo systemctl start gmixer.service 
+# ----------------------------
+# 5) pigpiod + gmixer aktivieren
+# ----------------------------
+echo "🚀 Aktiviere Dienste (pigpiod, gmixer)..."
+systemctl daemon-reload
+systemctl enable --now pigpiod
+systemctl enable --now gmixer.service
 
-# 5. Desktop-Icon erstellen (für einfachen Start, falls Autostart deaktiviert wird)
-echo "🖥️ Erstelle Desktop-Icon..."
-DESKTOP_PATH="/home/$USER_NAME/Desktop/Getraenkemixer.desktop"
+# ----------------------------
+# 6) Desktop-Icon erstellen (Bookworm-sicher)
+# ----------------------------
+echo "🖥️ Erstelle Desktop-Icon (Bookworm-trusted)..."
 
-echo "[Desktop Entry]
+# Desktop-Ordner sauber ermitteln (Desktop / Schreibtisch etc.)
+DESKTOP_DIR=""
+if command -v xdg-user-dir >/dev/null 2>&1; then
+  DESKTOP_DIR="$(sudo -u "${REAL_USER}" xdg-user-dir DESKTOP 2>/dev/null || true)"
+fi
+# Fallbacks
+if [[ -z "${DESKTOP_DIR}" || "${DESKTOP_DIR}" == "DESKTOP" ]]; then
+  if [[ -d "${REAL_HOME}/Desktop" ]]; then
+    DESKTOP_DIR="${REAL_HOME}/Desktop"
+  elif [[ -d "${REAL_HOME}/Schreibtisch" ]]; then
+    DESKTOP_DIR="${REAL_HOME}/Schreibtisch"
+  else
+    DESKTOP_DIR="${REAL_HOME}/Desktop"
+  fi
+fi
+
+sudo -u "${REAL_USER}" mkdir -p "${DESKTOP_DIR}"
+DESKTOP_FILE="${DESKTOP_DIR}/Getraenkemixer.desktop"
+
+sudo -u "${REAL_USER}" bash -c "cat > '${DESKTOP_FILE}' <<EOF
+[Desktop Entry]
 Type=Application
 Name=Getränkemixer
 Comment=Startet das Getränkemixer-Programm
-Exec=/usr/bin/python3 $MAIN_SCRIPT_PATH
-Path=$INSTALL_DIR
-Icon=$INSTALL_DIR/icon.png
-Terminal=false" | sudo tee $DESKTOP_PATH > /dev/null
+Exec=/usr/bin/python3 ${MAIN_SCRIPT}
+Path=${INSTALL_DIR}
+Icon=${ICON_PATH}
+Terminal=false
+Categories=Utility;
+EOF"
 
-sudo chmod +x $DESKTOP_PATH
-sudo chown $USER_NAME:$USER_NAME $DESKTOP_PATH
+chmod +x "${DESKTOP_FILE}"
+chown "${REAL_USER}:${REAL_USER}" "${DESKTOP_FILE}"
 
-echo "✅ Installation abgeschlossen!"
-echo "Bitte starten Sie den Raspberry Pi einmal neu (sudo reboot), um die Display-Änderungen anzuwenden und den Gmixer automatisch zu starten."
+# Bookworm: .desktop muss "trusted" sein, sonst wird's oft nicht als Launcher angezeigt
+if command -v gio >/dev/null 2>&1; then
+  sudo -u "${REAL_USER}" gio set "${DESKTOP_FILE}" metadata::trusted true 2>/dev/null || true
+fi
+
+# Hinweis falls Icon-Datei fehlt
+if [[ ! -f "${ICON_PATH}" ]]; then
+  echo "ℹ️ Hinweis: icon.png nicht gefunden unter ${ICON_PATH} – Desktop nutzt dann ein Standard-Icon."
+fi
+
+echo "✅ Setup abgeschlossen."
+echo "➡️ Bitte einmal neu starten: sudo reboot"
