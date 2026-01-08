@@ -35,8 +35,8 @@ try:
 
     # Optional: Alle Servo-Pins kurz als OUTPUT setzen und das PWM-Signal stoppen
     # (Obwohl cleanup dies meistens regelt, ist es sicherer)
-    # for pin in [16, 20] + [26, 19, 13, 6, 5, 11, 9, 10]:
-    #    GPIO.setup(pin, GPIO.OUT)
+    for pin in [16, 20] + [26, 19, 13, 6, 5, 11, 9, 10]:
+       GPIO.setup(pin, GPIO.OUT)
 
 
 except Exception as e:
