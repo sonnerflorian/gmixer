@@ -6,7 +6,7 @@ import hardware_config as cfg
 
 # Konfiguration aus hardware_config
 PINS = cfg.STEPPER_PINS
-DRINK_POSITIONS = cfg.DRINK_POSITIONS
+#DRINK_POSITIONS = cfg.DRINK_POSITIONS
 SERVO_PINS = cfg.SERVO_PINS
 STEP_DELAY = cfg.STEP_DELAY
 current_position = 0
@@ -152,15 +152,15 @@ def move_steps(delta_steps: int):
 def move_to_position(target_steps: int):
     move_steps(target_steps - current_position)
 
-def move_to_drink(drink_name: str):
-    if drink_name not in DRINK_POSITIONS:
-        raise KeyError(f"Unbekanntes Getränk: {drink_name}")
+# def move_to_drink(drink_name: str):
+#     if drink_name not in DRINK_POSITIONS:
+#         raise KeyError(f"Unbekanntes Getränk: {drink_name}")
     
-    _setup_driver() 
-    try:
-        move_to_position(-DRINK_POSITIONS[drink_name])
-    finally:
-        pass 
+#     _setup_driver() 
+#     try:
+#         move_to_position(-DRINK_POSITIONS[drink_name])
+#     finally:
+#         pass 
 
 # gmixer/fill_function.py (Ersetze die Funktion pour_with_servo)
 
