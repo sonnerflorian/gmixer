@@ -1,61 +1,169 @@
 import time
-import sys
-import os
-from gpiozero import Servo
+from gpiozero import OutputDevice, Servo
 from gpiozero.pins.pigpio import PiGPIOFactory
 
-# Pfad für fill_function (Stepper)
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import fill_function as fill
-import hardware_config as cfg
+# ============================================================
+# 1) KONFIG (wie in deinem sequenztest.py aufgebaut)
+# ============================================================
 
-# --- 1. SETUP WIE IM TEST-SKRIPT ---
-factory = PiGPIOFactory()
+# Stepper Pins (A4988)
+STEP_PIN = 16
+DIR_PIN = 20
+ENABLE_PIN = 21
 
-# Wir erstellen ein Dictionary mit allen Servos, genau wie in deinem Test
-servos = {}
-for name, pin in cfg.SERVO_PINS.items():
-    servos[name] = Servo(pin, pin_factory=factory)
-    servos[name].detach()
+DELAY = 0.0005  # Pulsdelay (sek) -> Geschwindigkeit (kleiner = schneller)
+DIR_SETTLE = 0.005
 
-def set_servo_stable(servo_obj, angle):
-    """Deine funktionierende Logik aus dem Test-Skript"""
-    value = (angle / 90.0) - 1.0
+# Servos (nur die zwei verwendeten)
+SERVO_APFEL_PIN = 22
+SERVO_WASSER_PIN = 26
+
+# Winkel
+CLOSE_ANGLE = 180
+OPEN_ANGLE = 70
+
+# "Ausschankzeit" (wie lange offen)
+APFEL_OPEN_TIME = 0.8
+WASSER_OPEN_TIME = 0.8
+
+# Stepper-Positionen in SCHRITTEN (Beispielwerte!)
+# start = 0; Apfel = +X; Wasser = +Y
+POS_START = 0
+POS_APFEL = 900
+POS_WASSER = 1200
+
+# Wenn der Stepper falsch herum läuft: FORWARD_DIR einfach umdrehen (True <-> False)
+FORWARD_DIR = False
+BACKWARD_DIR = not FORWARD_DIR
+
+
+# ============================================================
+# 2) SETUP (Factory + Geräte, wie in sequenztest.py)
+# ============================================================
+
+factory = PiGPIOFactory()  # nutzt pigpiod (localhost:8888)
+
+dir_pin = OutputDevice(DIR_PIN, pin_factory=factory)
+enable_pin = OutputDevice(ENABLE_PIN, pin_factory=factory)
+step_pin = OutputDevice(STEP_PIN, pin_factory=factory)
+
+servo_apfel = Servo(SERVO_APFEL_PIN, pin_factory=factory)
+servo_apfel.detach()
+servo_wasser = Servo(SERVO_WASSER_PIN, pin_factory=factory)
+servo_wasser.detach()
+# Servos direkt freigeben (wie bei dir)
+# servo_apfel.value = -1
+# servo_apfel.detach()
+# servo_wasser.value = -1
+# servo_wasser.detach()
+
+# Stepper deaktivieren (A4988 typisch: HIGH = aus)
+enable_pin.on()
+
+print("Initialisierung abgeschlossen. Geräte bereit.")
+time.sleep(3)
+
+
+# ============================================================
+# 3) HELPER (Servo exakt wie in deinem Script)
+# ============================================================
+
+def set_servo_angle(servo_obj: Servo, angle: float, settle: float = 0.5) -> None:
+    """Bewegt Servo zu Winkel und deaktiviert Signal wieder (detach)."""
+    value = (angle / 90.0) - 1.0  # 0°->-1, 90°->0, 180°->1
     servo_obj.value = value
-    time.sleep(0.5) 
-    servo_obj.detach() 
+    time.sleep(settle)
+    servo_obj.detach()
+
+
+def pour(servo_obj: Servo, open_time: float) -> None:
+    """0 -> 90 -> 0, mit detach nach jedem Schritt (wie sequenztest)."""
+    set_servo_angle(servo_obj, CLOSE_ANGLE)
+    time.sleep(0.2)
+
+    set_servo_angle(servo_obj, OPEN_ANGLE)
+    time.sleep(open_time)
+
+    set_servo_angle(servo_obj, CLOSE_ANGLE)
+    time.sleep(0.3)
+
+
+def move_stepper(steps: int, direction: bool) -> None:
+    """Bewegt Stepper per manueller HIGH/LOW Schleife und deaktiviert ihn."""
+    if steps <= 0:
+        return
+
+    print(f"-> Stepper: {steps} Schritte, dir={direction}")
+
+    # aktivieren (LOW = an)
+    enable_pin.off()
+
+    # Richtung setzen
+    dir_pin.value = direction
+    time.sleep(DIR_SETTLE)
+
+    # Schritte pulsen
+    for _ in range(steps):
+        step_pin.on()
+        time.sleep(DELAY)
+        step_pin.off()
+        time.sleep(DELAY)
+
+    # deaktivieren (HIGH = aus)
+    enable_pin.on()
+    time.sleep(0.1)
+
+
+# ============================================================
+# 4) REZEPTLOGIK (mit Positionen)
+# ============================================================
+
+current_pos = POS_START  # wichtig: ohne Homing muss Startlage stimmen!
+
+
+def move_to(target_pos: int) -> None:
+    global current_pos
+    delta = target_pos - current_pos
+    if delta == 0:
+        return
+
+    direction = FORWARD_DIR if delta > 0 else BACKWARD_DIR
+    move_stepper(abs(delta), direction)
+    current_pos = target_pos
+
 
 def main():
-    try:
-        # 1. Johannisbeere
-        fill.move_to_drink("Johannisbeere")
-        print("Gieße Johannisbeere...")
-        
-        # Nutze das bereits existierende Objekt
-        set_servo_stable(servos["Johannisbeere"], 0) # Auf
-        time.sleep(0.7) # dwell
-        set_servo_stable(servos["Johannisbeere"], 90)  # Zu
-        
-        time.sleep(0.5)
+    print("Starte Rezept: Apfelsaftschorle (Stepper + Servo-detach Sequenz)")
 
-        # 2. Wasser
-        fill.move_to_drink("Wasser")
-        print("Gieße Wasser...")
-        
-        set_servo_stable(servos["Wasser"], 360) # Auf
-        time.sleep(0.7) # dwell
-        set_servo_stable(servos["Wasser"], 290)  # Zu
+    # Sicherheitszustand: Ventile zu
+    # set_servo_angle(servo_apfel, CLOSE_ANGLE)
+    # set_servo_angle(servo_wasser, CLOSE_ANGLE)
 
-        # 3. Zurück
-        fill.move_to_drink("start")
+    # 1) zu Apfel fahren + ausschenken
+    move_to(POS_APFEL)
+    print("-> Apfelsaft")
+    pour(servo_apfel, APFEL_OPEN_TIME)
 
-    except KeyboardInterrupt:
-        print("Abbruch")
-    finally:
-        # Sauber schließen am Ende des Rezepts
-        for s in servos.values():
-            s.close()
-        fill.gpio_cleanup()
+    time.sleep(0.6)
+
+    # 2) zu Wasser fahren + ausschenken
+    move_to(POS_WASSER)
+    print("-> Wasser")
+    pour(servo_wasser, WASSER_OPEN_TIME)
+
+    # 3) zurück zu Start
+    move_to(POS_START)
+    print("Fertig.")
+
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\nAbbruch durch Benutzer (Strg+C).")
+    finally:
+        # Safe-Off
+        enable_pin.on()
+        servo_apfel.detach()
+        servo_wasser.detach()
+        print("Cleanup: Stepper deaktiviert, Servos detached.")
