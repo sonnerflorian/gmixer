@@ -15,17 +15,17 @@ DELAY = 0.0005  # Pulsdelay (sek) -> Geschwindigkeit (kleiner = schneller)
 DIR_SETTLE = 0.005
 
 # Servos (nur die zwei verwendeten)
-SERVO_APFEL_PIN = 5
-SERVO_WASSER_PIN = 17
-Servo_3_PIN = 13
+SERVO_APFEL_PIN = 17
+SERVO_WASSER_PIN = 5
+Servo_3_PIN = 22
 Servo_4_PIN = 26
-Servo_5_PIN = 18
-Servo_6_PIN = 22
-Servo_7_PIN = 27
+Servo_5_PIN = 27
+Servo_6_PIN = 18
+Servo_7_PIN = 13
 Servo_8_PIN = 19
 # Winkel
 CLOSE_ANGLE = 170
-OPEN_ANGLE = 60
+OPEN_ANGLE = 80
 
 # "Ausschankzeit" (wie lange offen)
 OPEN_TIME = 0.8
@@ -130,7 +130,7 @@ def move_stepper(steps: int, direction: bool) -> None:
 
     # deaktivieren (HIGH = aus)
     enable_pin.on()
-    
+
     time.sleep(0.1)
 
 
