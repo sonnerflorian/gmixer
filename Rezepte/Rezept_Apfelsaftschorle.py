@@ -133,8 +133,8 @@ def main():
     print("Starte Rezept: Apfelsaftschorle (Stepper + Servo-detach Sequenz)")
 
     # Sicherheitszustand: Ventile zu
-    set_servo_angle(servo_apfel, CLOSE_ANGLE)
-    set_servo_angle(servo_wasser, CLOSE_ANGLE)
+    # set_servo_angle(servo_apfel, CLOSE_ANGLE)
+    # set_servo_angle(servo_wasser, CLOSE_ANGLE)
 
     # 1) zu Apfel fahren + ausschenken
     move_to(POS_APFEL)
