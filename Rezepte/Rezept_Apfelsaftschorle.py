@@ -1,136 +1,166 @@
-
-# gmixer/Rezepte/Rezept_Apfelsaftschorle.py
 import time
-
-import os
-import sys
-
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))          # .../gmixer/Rezepte
-PROJECT_DIR = os.path.abspath(os.path.join(CURRENT_DIR, ".."))    # .../gmixer
-
-if PROJECT_DIR not in sys.path:
-    sys.path.insert(0, PROJECT_DIR)
-
-
-
-import hardware_config as hw
 from gpiozero import OutputDevice, Servo
+from gpiozero.pins.pigpio import PiGPIOFactory
 
-# Optional: ruhigeres Servo-PWM mit pigpio
-try:
-    from gpiozero.pins.pigpio import PiGPIOFactory
-    _PIGPIO_FACTORY = PiGPIOFactory()
-except Exception:
-    _PIGPIO_FACTORY = None
+# ============================================================
+# 1) KONFIG (wie in deinem sequenztest.py aufgebaut)
+# ============================================================
 
+# Stepper Pins (A4988)
+STEP_PIN = 16
+DIR_PIN = 20
+ENABLE_PIN = 21
 
-# ------------------------------------------------------------
-# Hilfsfunktionen
-# ------------------------------------------------------------
-def _make_output(pin: int) -> OutputDevice:
-    return OutputDevice(pin, initial_value=False)
+DELAY = 0.0005  # Pulsdelay (sek) -> Geschwindigkeit (kleiner = schneller)
+DIR_SETTLE = 0.005
 
+# Servos (nur die zwei verwendeten)
+SERVO_APFEL_PIN = 26
+SERVO_WASSER_PIN = 19
 
-def _make_servo(pin: int) -> Servo:
-    if _PIGPIO_FACTORY is not None:
-        return Servo(pin, pin_factory=_PIGPIO_FACTORY)
-    return Servo(pin)
+# Winkel
+CLOSE_ANGLE = 0
+OPEN_ANGLE = 90
 
+# "Ausschankzeit" (wie lange offen)
+APFEL_OPEN_TIME = 0.8
+WASSER_OPEN_TIME = 0.8
 
-def set_servo_angle(servo: Servo, angle: float) -> None:
-    """
-    Mapping:
-    0°   -> -1
-    90°  ->  0
-    180° ->  1
-    """
-    servo.value = (angle / 90.0) - 1.0
+# Stepper-Positionen in SCHRITTEN (Beispielwerte!)
+# start = 0; Apfel = +X; Wasser = +Y
+POS_START = 0
+POS_APFEL = 1200
+POS_WASSER = 2400
 
-
-def pour_with_servo(
-    servo_pin: int,
-    dwell: float = 0.7,
-    open_angle: float = 90.0,
-    close_angle: float = 0.0,
-):
-    servo = _make_servo(servo_pin)
-    try:
-        set_servo_angle(servo, open_angle)
-        time.sleep(float(dwell))
-        set_servo_angle(servo, close_angle)
-        time.sleep(0.4)
-    finally:
-        servo.close()
+# Richtungskonvention:
+# Wenn der Stepper falsch herum läuft: FORWARD_DIR einfach umdrehen (True <-> False)
+FORWARD_DIR = False
+BACKWARD_DIR = not FORWARD_DIR
 
 
-# ------------------------------------------------------------
-# Stepper (ohne Homing!)
-# ------------------------------------------------------------
-class Stepper:
-    def __init__(self):
-        self.dir = _make_output(hw.STEPPER_PINS["DIR"])
-        self.step = _make_output(hw.STEPPER_PINS["STEP"])
-        self.en = _make_output(hw.STEPPER_PINS["EN"])
-        self.step_delay = float(hw.STEP_DELAY)
+# ============================================================
+# 2) SETUP (Factory + Geräte, wie in sequenztest.py)
+# ============================================================
 
-        # A4988 typisch: EN LOW = enabled
-        self.en.on()  # deaktiviert
-        self.position_steps = hw.DRINK_POSITIONS.get("start", 0)
+factory = PiGPIOFactory()  # nutzt pigpiod (localhost:8888)
 
-    def enable(self):
-        self.en.off()
+dir_pin = OutputDevice(DIR_PIN, pin_factory=factory)
+enable_pin = OutputDevice(ENABLE_PIN, pin_factory=factory)
+step_pin = OutputDevice(STEP_PIN, pin_factory=factory)
 
-    def disable(self):
-        self.en.on()
+servo_apfel = Servo(SERVO_APFEL_PIN, pin_factory=factory)
+servo_wasser = Servo(SERVO_WASSER_PIN, pin_factory=factory)
 
-    def do_steps(self, direction: bool, steps: int):
-        if steps <= 0:
-            return
+# Servos direkt freigeben (wie bei dir)
+servo_apfel.detach()
+servo_wasser.detach()
 
-        self.dir.value = not bool(direction)
+# Stepper deaktivieren (A4988 typisch: HIGH = aus)
+enable_pin.on()
 
-        for _ in range(steps):
-            self.step.on()
-            time.sleep(self.step_delay)
-            self.step.off()
-            time.sleep(self.step_delay)
-
-        if direction == hw.STEPPER_FORWARD:
-            self.position_steps += steps
-        else:
-            self.position_steps -= steps
-
-    def move_to(self, target_steps: int):
-        delta = target_steps - self.position_steps
-        if delta == 0:
-            return
-
-        direction = hw.STEPPER_FORWARD if delta > 0 else hw.STEPPER_BACKWARD
-        self.do_steps(direction, abs(delta))
+print("Initialisierung abgeschlossen. Geräte bereit.")
 
 
-# ------------------------------------------------------------
-# Rezept: Apfelsaftschorle
-# ------------------------------------------------------------
+# ============================================================
+# 3) HELPER (Servo exakt wie in deinem Script)
+# ============================================================
+
+def set_servo_angle(servo_obj: Servo, angle: float, settle: float = 0.5) -> None:
+    """Bewegt Servo zu Winkel und deaktiviert Signal wieder (detach)."""
+    value = (angle / 90.0) - 1.0  # 0°->-1, 90°->0, 180°->1
+    servo_obj.value = value
+    time.sleep(settle)
+    servo_obj.detach()
+
+
+def pour(servo_obj: Servo, open_time: float) -> None:
+    """0 -> 90 -> 0, mit detach nach jedem Schritt (wie sequenztest)."""
+    set_servo_angle(servo_obj, CLOSE_ANGLE)
+    time.sleep(0.2)
+
+    set_servo_angle(servo_obj, OPEN_ANGLE)
+    time.sleep(open_time)
+
+    set_servo_angle(servo_obj, CLOSE_ANGLE)
+    time.sleep(0.3)
+
+
+def move_stepper(steps: int, direction: bool) -> None:
+    """Bewegt Stepper per manueller HIGH/LOW Schleife und deaktiviert ihn."""
+    if steps <= 0:
+        return
+
+    print(f"-> Stepper: {steps} Schritte, dir={direction}")
+
+    # aktivieren (LOW = an)
+    enable_pin.off()
+
+    # Richtung setzen
+    dir_pin.value = direction
+    time.sleep(DIR_SETTLE)
+
+    # Schritte pulsen
+    for _ in range(steps):
+        step_pin.on()
+        time.sleep(DELAY)
+        step_pin.off()
+        time.sleep(DELAY)
+
+    # deaktivieren (HIGH = aus)
+    enable_pin.on()
+    time.sleep(0.1)
+
+
+# ============================================================
+# 4) REZEPTLOGIK (mit Positionen)
+# ============================================================
+
+current_pos = POS_START  # wichtig: ohne Homing muss Startlage stimmen!
+
+
+def move_to(target_pos: int) -> None:
+    global current_pos
+    delta = target_pos - current_pos
+    if delta == 0:
+        return
+
+    direction = FORWARD_DIR if delta > 0 else BACKWARD_DIR
+    move_stepper(abs(delta), direction)
+    current_pos = target_pos
+
+
 def main():
-    stepper = Stepper()
-    stepper.enable()
+    print("Starte Rezept: Apfelsaftschorle (Stepper + Servo-detach Sequenz)")
 
-    # 1) Apfelsaft
-    stepper.move_to(hw.DRINK_POSITIONS["Apfelsaft"])
-    pour_with_servo(hw.SERVO_PINS["Apfelsaft"], dwell=0.7)
-    time.sleep(0.5)
+    # Sicherheitszustand: Ventile zu
+    set_servo_angle(servo_apfel, CLOSE_ANGLE)
+    set_servo_angle(servo_wasser, CLOSE_ANGLE)
 
-    # 2) Wasser
-    stepper.move_to(hw.DRINK_POSITIONS["Wasser"])
-    pour_with_servo(hw.SERVO_PINS["Wasser"], dwell=0.7)
-    time.sleep(0.5)
+    # 1) zu Apfel fahren + ausschenken
+    move_to(POS_APFEL)
+    print("-> Apfelsaft")
+    pour(servo_apfel, APFEL_OPEN_TIME)
 
-    # 3) Zurück zur Startposition
-    stepper.move_to(hw.DRINK_POSITIONS["start"])
+    time.sleep(0.6)
 
-    stepper.disable()
+    # 2) zu Wasser fahren + ausschenken
+    move_to(POS_WASSER)
+    print("-> Wasser")
+    pour(servo_wasser, WASSER_OPEN_TIME)
+
+    # 3) zurück zu Start
+    move_to(POS_START)
+    print("Fertig.")
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\nAbbruch durch Benutzer (Strg+C).")
+    finally:
+        # Safe-Off
+        enable_pin.on()
+        servo_apfel.detach()
+        servo_wasser.detach()
+        print("Cleanup: Stepper deaktiviert, Servos detached.")
