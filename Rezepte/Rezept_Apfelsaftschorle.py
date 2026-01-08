@@ -106,7 +106,7 @@ class Stepper:
             return
 
         direction = hw.STEPPER_FORWARD if delta > 0 else hw.STEPPER_BACKWARD
-        self.do_steps(direction, abs(delta))
+        self.do_steps(-direction, abs(delta))
 
 
 # ------------------------------------------------------------
