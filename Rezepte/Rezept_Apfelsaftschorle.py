@@ -96,9 +96,9 @@ class Stepper:
             time.sleep(self.step_delay)
 
         if direction == hw.STEPPER_FORWARD:
-            self.position_steps += steps
-        else:
             self.position_steps -= steps
+        else:
+            self.position_steps += steps
 
     def move_to(self, target_steps: int):
         delta = target_steps - self.position_steps
@@ -106,7 +106,7 @@ class Stepper:
             return
 
         direction = hw.STEPPER_FORWARD if delta > 0 else hw.STEPPER_BACKWARD
-        self.do_steps(-direction, abs(delta))
+        self.do_steps(direction, abs(delta))
 
 
 # ------------------------------------------------------------
