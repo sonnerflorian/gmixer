@@ -15,10 +15,10 @@ DELAY = 0.0005  # Pulsdelay (sek) -> Geschwindigkeit (kleiner = schneller)
 DIR_SETTLE = 0.005
 
 # Servos (nur die zwei verwendeten)
-SERVO_APFEL_PIN = 26
+SERVO_APFEL_PIN = 5
 SERVO_WASSER_PIN = 19
 Servo_3_PIN = 13
-Servo_4_PIN = 6
+Servo_4_PIN = 26
 Servo_5_PIN = 18
 Servo_6_PIN = 22
 Servo_7_PIN = 27
