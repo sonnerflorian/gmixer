@@ -19,7 +19,7 @@ SERVO_APFEL_PIN = 26
 SERVO_WASSER_PIN = 19
 
 # Winkel
-CLOSE_ANGLE = 100
+CLOSE_ANGLE = 180
 OPEN_ANGLE = 0
 
 # "Ausschankzeit" (wie lange offen)
