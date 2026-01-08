@@ -2,6 +2,17 @@
 # gmixer/Rezepte/Rezept_Apfelsaftschorle.py
 import time
 
+import os
+import sys
+
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))          # .../gmixer/Rezepte
+PROJECT_DIR = os.path.abspath(os.path.join(CURRENT_DIR, ".."))    # .../gmixer
+
+if PROJECT_DIR not in sys.path:
+    sys.path.insert(0, PROJECT_DIR)
+
+
+
 import hardware_config as hw
 from gpiozero import OutputDevice, Servo
 
