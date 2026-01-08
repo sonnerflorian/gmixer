@@ -91,8 +91,8 @@ def gpio_cleanup():
         _button = None
 
     # 2. Ruft das globale Cleanup auf
-    fill.gpio_cleanup()
-    _factory = None
+    # fill.gpio_cleanup()
+    # _factory = None
 
 
 # -----------------------------------

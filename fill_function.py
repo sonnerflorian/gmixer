@@ -6,8 +6,6 @@ import hardware_config as cfg
 
 # Konfiguration aus hardware_config
 PINS = cfg.STEPPER_PINS
-#DRINK_POSITIONS = cfg.DRINK_POSITIONS
-# SERVO_PINS = cfg.SERVO_PINS
 STEP_DELAY = cfg.STEP_DELAY
 current_position = 0
 
@@ -49,37 +47,37 @@ def _setup_driver():
         raise
 
 
-def gpio_cleanup():
-    """
-    Führt ein sauberes Herunterfahren aller Stepper/Factory-Ressourcen durch.
-    """
-    global _gpio_devices, _factory, _en_pin, _dir_pin, _step_pin
+# def gpio_cleanup():
+#     """
+#     Führt ein sauberes Herunterfahren aller Stepper/Factory-Ressourcen durch.
+#     """
+#     global _gpio_devices, _factory, _en_pin, _dir_pin, _step_pin
     
-    if _factory is None:
-        return 
+#     if _factory is None:
+#         return 
 
-    print("Führe fill_function GPIO Cleanup aus...")
+#     print("Führe fill_function GPIO Cleanup aus...")
     
-    # 1. Alle Servos explizit stilllegen (MUSS HIER REIN)
-    # Stoppt alle PWM-Signale garantiert.
-    _silence_all_servos()
+#     # 1. Alle Servos explizit stilllegen (MUSS HIER REIN)
+#     # Stoppt alle PWM-Signale garantiert.
+#     _silence_all_servos()
     
-    # 2. Stepper-Pins schließen
-    if _en_pin is not None:
-        _en_pin.on() # Treiber deaktivieren (Sicherheit)
+#     # 2. Stepper-Pins schließen
+#     if _en_pin is not None:
+#         _en_pin.on() # Treiber deaktivieren (Sicherheit)
     
-    for device in _gpio_devices:
-        if device is not None:
-            try:
-                device.close()
-            except Exception:
-                pass
+#     for device in _gpio_devices:
+#         if device is not None:
+#             try:
+#                 device.close()
+#             except Exception:
+#                 pass
                 
-    # Globale Zustände zurücksetzen
-    _gpio_devices = []
-    _factory = None
-    _dir_pin = _step_pin = _en_pin = None
-    print("Cleanup abgeschlossen.")
+#     # Globale Zustände zurücksetzen
+#     _gpio_devices = []
+#     _factory = None
+#     _dir_pin = _step_pin = _en_pin = None
+#     print("Cleanup abgeschlossen.")
 
 def _raw_step(delay):
     """Erzeugt einen einzelnen Schrittpuls mit variablem Delay (für Ramping)."""
