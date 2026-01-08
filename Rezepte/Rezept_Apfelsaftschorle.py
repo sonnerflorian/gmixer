@@ -49,9 +49,9 @@ enable_pin = OutputDevice(ENABLE_PIN, pin_factory=factory)
 step_pin = OutputDevice(STEP_PIN, pin_factory=factory)
 
 servo_apfel = Servo(SERVO_APFEL_PIN, pin_factory=factory)
-time.sleep(2)  # kurz warten
+servo_apfel.detach()
 servo_wasser = Servo(SERVO_WASSER_PIN, pin_factory=factory)
-
+servo_wasser.detach()
 # Servos direkt freigeben (wie bei dir)
 # servo_apfel.value = -1
 # servo_apfel.detach()
