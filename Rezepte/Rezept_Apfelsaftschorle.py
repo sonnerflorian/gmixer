@@ -2,10 +2,6 @@ import time
 from gpiozero import OutputDevice, Servo
 from gpiozero.pins.pigpio import PiGPIOFactory
 
-# ============================================================
-# 1) KONFIG (wie in deinem sequenztest.py aufgebaut)
-# ============================================================
-
 # Stepper Pins (A4988)
 STEP_PIN = 16
 DIR_PIN = 20
@@ -14,9 +10,9 @@ ENABLE_PIN = 21
 DELAY = 0.0005  # Pulsdelay (sek) -> Geschwindigkeit (kleiner = schneller)
 DIR_SETTLE = 0.005
 
-# Servos (nur die zwei verwendeten)
-SERVO_APFEL_PIN = 17
-SERVO_WASSER_PIN = 5
+# Servos (Welche Servos werden genutzt?)
+SERVO_1_PIN = 17
+SERVO_2_PIN = 5
 
 # Winkel
 CLOSE_ANGLE = 180
