@@ -1,191 +1,106 @@
-# Getränkemixer
+# Getränkemischer
 Software für den Getränkemixer der Technischen Hochschule Nürnberg
 
-# GMixer – Getränkemixer mit Raspberry Pi
+# Anleitung zur Einrichtung des Raspberry Pis und erstellen eines neuen Rezepts
 
-Dieses Projekt steuert einen Getränkemixer mit einem Raspberry Pi (z.B. Raspberry Pi Zero W / Zero 2).  
-In dieser Anleitung wird beschrieben, wie du:
+## 1. EInrichten des Raspberry Pis
 
-1. Einen neuen Raspberry Pi aufsetzt  
-2. Display um 90° drehst  
-3. WLAN einrichtest  
-4. Das `gmixer`-Repository clonest und startklar machst  
+### Image auf SD-Karte schreiben
 
----
-
-## 1. Raspberry Pi vorbereiten
-
-### 1.1. Image auf SD-Karte schreiben
-
-1. **Raspberry Pi Imager** herunterladen und installieren (für Windows, macOS oder Linux).
-2. SD-Karte einstecken.
+1. **Raspberry Pi Imager** von der offiziellen Seite herunterladen und installieren.
+2. SD-Karte des Raspberry Pis in den Computer einstecken
 3. Im Imager:
-   - Betriebssystem auswählen, z.B.  
-     - `Raspberry Pi OS (32-bit)` oder  
-     - `Raspberry Pi OS Lite (32-bit)` (ohne Desktop)
+   - Betriebssystem auswählen  
+     - `Raspberry Pi OS (32-bit)` (Bookworm)
    - SD-Karte auswählen.
-4. Vor dem Schreiben auf das **Zahnradsymbol (Einstellungen)** klicken:
-   - **Hostname** setzen (z.B. `gmixer`)
-   - **SSH aktivieren** (z.B. “Enable SSH”)
-   - **Benutzername & Passwort** setzen
-   - **WLAN konfigurieren** (SSID, Passwort, Land – z.B. `DE`)
-   - Tastaturlayout auf `de` / `German` stellen (optional, aber empfohlen)
-5. Image schreiben und SD-Karte sicher entfernen.
-6. SD-Karte in den Raspberry Pi stecken und Pi starten.
+   - Hostname wählen (gmixer)
+   - Lokaliserung einrichten
+   - Benutzername mit Passort wählen (Benutzername: gmixer, Passwort: pw)
+   - WLAN-Daten eingeben
+   - SSH-Aktivieren (Passwort zur Authentifizierung verwenden)
+4. Image schreiben
+5. SD-Karte in den Raspberry Pi stecken und Pi starten (durch Stromzufuhr).
 
 ---
 
-## 2. Erster Start und Grundkonfiguration
+### Erster Start und Grundkonfiguration
 
-Verbinde dich entweder:
+Beim ersten Start kann dies etwas länger Dauern.
 
-- mit Monitor, Tastatur und Maus **direkt am Pi**, oder  
-- per **SSH** von deinem Rechner:
+**Fernzugriff per SSH**
+
+Wichtig ist dass beide Geräte in einem Netzwerk sind, Eduroam funktioniert nicht.
+
+Herausfinden der IP-Adresse
+- Möglichkeit 1: Nach dem Start wird die Aktuelle IP-Adresse oben rechts kurz angezeigt
+- Möglichkeit 2: über einen IP Scanner
+
+Ist die IP-Adresse bekannt kann mit folgendem Befehl in einem Terminal eine SSH-Verbindung hergestellt werden:
 
 ```bash
 ssh benutzername@<ip-des-pis>
 # Beispiel:
-ssh pi@gmixer.local
-2.1. System aktualisieren
-bash
-Code kopieren
-sudo apt update
-sudo apt upgrade -y
-3. WLAN einrichten (falls noch nicht konfiguriert)
-Falls WLAN nicht über den Imager gesetzt wurde, kannst du es nachträglich einrichten.
+ssh gmixer@10.252.252.114
 
-Variante 1: Über raspi-config
-bash
-Code kopieren
-sudo raspi-config
-Dann:
+```
+Nun muss der Sicherheitschlüssel bestätigt werden und das zuvor gewählte Passwort eingegeben werden
 
-System Options → Wireless LAN
+Besteht eine verbindung wird im Terminal folgendes angezeigt
 
-SSID (WLAN-Name) eingeben
+```
+gmixer@gmixer:~$ 
+```
 
-Passwort eingeben
+Jetzt kann das aktuelle Github-Repo geklont werden
 
-Beenden und neu starten:
-
-bash
-Code kopieren
-sudo reboot
-Variante 2: Direkt in wpa_supplicant.conf
-bash
-Code kopieren
-sudo nano /etc/wpa_supplicant/wpa_supplicant.conf
-Am Ende einfügen (falls noch nicht vorhanden):
-
-conf
-Code kopieren
-network={
-    ssid="DEIN_WLAN_NAME"
-    psk="DEIN_WLAN_PASSWORT"
-}
-Speichern (Strg + O, Enter) und schließen (Strg + X), dann:
-
-bash
-Code kopieren
-sudo wpa_cli -i wlan0 reconfigure
-4. Display um 90° drehen
-Je nach Raspberry-Pi-OS-Version liegt die Konfigurationsdatei unter:
-
-/boot/firmware/config.txt (neue Raspberry Pi OS Versionen) oder
-
-/boot/config.txt (ältere Versionen)
-
-4.1. Datei öffnen
-Versuche zuerst:
-
-bash
-Code kopieren
-sudo nano /boot/firmware/config.txt
-Falls es diese Datei nicht gibt, stattdessen:
-
-bash
-Code kopieren
-sudo nano /boot/config.txt
-4.2. Rotation setzen
-Füge am Ende der Datei folgende Zeile ein:
-
-c
-Code kopieren
-display_rotate=1
-Bedeutung:
-
-0 = 0° (Standard)
-
-1 = 90°
-
-2 = 180°
-
-3 = 270°
-
-Datei speichern und Pi neu starten:
-
-bash
-Code kopieren
-sudo reboot
-5. Git und Python installieren
-Stelle sicher, dass git und Python installiert sind:
-
-bash
-Code kopieren
-sudo apt update
-sudo apt install -y git python3 python3-pip
-(Optional, falls benötigt: weitere Pakete wie python3-venv)
-
-6. gmixer-Repository clonen
-Wechsle in ein Verzeichnis, in dem du das Projekt ablegen möchtest, z.B. ins Home-Verzeichnis:
-
-bash
-Code kopieren
-cd ~
+```bash
 git clone https://github.com/sonnerflorian/gmixer.git
-cd gmixer
-7. Python-Abhängigkeiten installieren
-Falls es eine requirements.txt im Repo gibt:
+```
+als nächstes wird die Datei setup.sh installiert, dafür muss zunächst in den eben geklonten Ordner gewechselt werden und anschließend die Datein installiert werden. DIes kann einen kurzen Moment Dauern:
 
-bash
-Code kopieren
-pip3 install -r requirements.txt
-Alternativ können Abhängigkeiten auch direkt im README oder in der Projektbeschreibung aufgeführt sein – ggf. dort nachlesen.
+```bash
+cd gmixer/
+sudo chmod +x setup.sh
+./setup.sh
+```
+nun sollten der Raspberry Pi konfiguriert sein
 
-8. Programm starten
-(Anpassen an dein tatsächliches Startskript – Beispiel:)
+### VNC Verbindung (Fernzugriff grafischer Steuerung)
 
-bash
-Code kopieren
-python3 main.py
-oder
+***aktivieren des VNC-Servers auf dem Raspberry Pi (eigentlich nicht nötig)***
 
-bash
-Code kopieren
-python3 gmixer.py
-Je nach Projektstruktur bitte den konkreten Dateinamen verwenden.
+auf dem Raspi über SSH:
 
-9. Autostart einrichten (optional)
-Wenn der GMixer beim Systemstart automatisch starten soll, kannst du z.B. einen systemd-Service oder einen Eintrag in rc.local verwenden. Beispiel systemd (Platzhalter):
+```bash
+sudo raspi-config
+```
+Es öffnet sich ein Menü:
 
-bash
-Code kopieren
-sudo nano /etc/systemd/system/gmixer.service
-Inhalt (Beispiel, anpassen!):
+Interface options--> VNC --> enable
 
-ini
-Code kopieren
-[Unit]
-Description=GMixer Service
-After=network.target
+Warten bis VNC aktiviert wurde
 
-[Service]
-ExecStart=/usr/bin/python3 /home/pi/gmixer/main.py
-WorkingDirectory=/home/pi/gmixer
-StandardOutput=inherit
-StandardError=inherit
-Restart=always
-User=pi
+**VNC Verbindung herstellen**
+- Installieren eines VNC-Viewers z.b. von RealVNC
+- Verninden via Eingabe der IP-Adresse
+- Benutzername und Passwort eingeben
+- Häckchen bei: Passwort merken
+
+### Display drehen (eventuell nötig)
+
+Über VNC
+- Start Icon anklicken
+-> Preferences
+-> Screen configuration
+- Screens (unten rechts)
+-> Orientation
+-> right
+- Ausführen und Bestätigen 
+
+## Programm starten
+
+Das Hauptprogramm kann über das Icon auf dem Homescreen gestartet werden, es öffnet sich im Vollbildmodus
+(schließen durch ESC)
 
 [Install]
 WantedBy=multi-user.target
