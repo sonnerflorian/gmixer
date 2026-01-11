@@ -54,20 +54,36 @@ fi
 # ----------------------------
 # 3) Display Rotation konfigurieren (Bookworm: /boot/firmware/config.txt)
 # ----------------------------
-echo "🖥️ Setze Display-Rotation (display_rotate=3)..."
+echo "🖥️ Setze Display-Rotation (HDMI 270°)..."
+
 CONFIG_FILE="/boot/firmware/config.txt"
 if [[ -f "/boot/config.txt" && ! -f "${CONFIG_FILE}" ]]; then
   CONFIG_FILE="/boot/config.txt"
 fi
 
-if [[ -f "${CONFIG_FILE}" ]]; then
-  if grep -qE '^\s*display_rotate=' "${CONFIG_FILE}"; then
-    sed -i 's/^\s*display_rotate=.*/display_rotate=3/' "${CONFIG_FILE}"
+set_or_replace() {
+  local key="$1"
+  local value="$2"
+  local file="$3"
+
+  if grep -qE "^\s*${key}=" "$file"; then
+    sed -i "s|^\s*${key}=.*|${key}=${value}|" "$file"
   else
-    echo "" >> "${CONFIG_FILE}"
-    echo "# GMixer: rotate display 270°" >> "${CONFIG_FILE}"
-    echo "display_rotate=3" >> "${CONFIG_FILE}"
+    echo "" >> "$file"
+    echo "# GMixer: set ${key}" >> "$file"
+    echo "${key}=${value}" >> "$file"
   fi
+}
+
+if [[ -f "${CONFIG_FILE}" ]]; then
+  # Aufräumen: alte/konkurrierende Keys entfernen (optional, aber hilfreich)
+  sed -i '/^\s*display_rotate=/d' "${CONFIG_FILE}"
+  sed -i '/^\s*display_hdmi_rotate=/d' "${CONFIG_FILE}"
+
+  # 3 = 270° (Portrait)
+  set_or_replace "display_hdmi_rotate" "3" "${CONFIG_FILE}"
+
+  echo "✅ Rotation in ${CONFIG_FILE} gesetzt: display_hdmi_rotate=3"
 else
   echo "⚠️ Konnte config.txt nicht finden – Rotation übersprungen."
 fi

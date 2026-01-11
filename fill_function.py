@@ -1,15 +1,14 @@
 import time
-import sys
 from gpiozero import OutputDevice, Servo
 from gpiozero.pins.pigpio import PiGPIOFactory 
-import hardware_config as cfg
 
-# Konfiguration aus hardware_config
-PINS = cfg.STEPPER_PINS
-STEP_DELAY = cfg.STEP_DELAY
+PINS = {"DIR": 20, "STEP": 16, "EN": 21}
+STEP_DELAY = 0.0005   
 current_position = 0
+STEPPER_FORWARD = True
+STEPPER_BACKWARD = False
 
-# Globale Variablen für gpiozero Objekte (Stepper-Pins und Factory)
+
 _factory = None
 _dir_pin = None
 _step_pin = None
@@ -30,15 +29,12 @@ def _setup_driver():
     try:
         _factory = PiGPIOFactory()
         
-        # Stepper Pins
         _dir_pin = OutputDevice(PINS["DIR"], pin_factory=_factory)
         _step_pin = OutputDevice(PINS["STEP"], pin_factory=_factory)
         _en_pin = OutputDevice(PINS["EN"], pin_factory=_factory)
         
-        # Liste für späteres Schließen füllen
         _gpio_devices.extend([_dir_pin, _step_pin, _en_pin])
 
-        # Aktivieren des Treibers (EN=LOW in A4988)
         _en_pin.off() 
         print("Driver setup successful.")
     except Exception as e:
@@ -76,12 +72,11 @@ def move_steps(delta_steps: int):
     _setup_driver() 
     
     try:
-        # NEU: Stepper-Treiber reaktivieren
         if _en_pin is not None:
             _en_pin.off() # Stepper aktivieren (LOW)
             time.sleep(0.005) # Kurze Pause zur Stabilisierung
             
-        direction = cfg.STEPPER_FORWARD if delta_steps > 0 else cfg.STEPPER_BACKWARD
+        direction = STEPPER_FORWARD if delta_steps > 0 else STEPPER_BACKWARD
         _dir_pin.value = direction 
         
         for _ in range(abs(delta_steps)):
@@ -90,50 +85,5 @@ def move_steps(delta_steps: int):
         current_position += delta_steps
         
     finally:
-        # NEU: Stepper deaktivieren (für Stabilität, Strom und Hitze)
         if _en_pin is not None:
-            _en_pin.on() # Stepper deaktivieren (HIGH)
-
-def move_to_position(target_steps: int):
-    move_steps(target_steps - current_position)
-
-
-# def pour_with_servo(servo_pin: int, forward_angle: float = 180, dwell: float = 0.5):
-#     """Steuert das Servo-Ventil. Stellt sicher, dass der Stepper deaktiviert ist."""
-    
-#     _setup_driver()
-    
-#     # 1. Software-Trennung des Steppers
-#     global _en_pin
-#     if _en_pin is not None and _en_pin.value == False:
-#         _en_pin.on()           
-#         time.sleep(0.01)       
-            
-#     # Wir initialisieren NUR den Servo-Pin, den wir benötigen.
-#     servo = None
-    
-#     try:
-#         # 2. Servo-Aktivierung und Betrieb
-#         # Initialisiere nur den aktiven Servo
-#         servo = Servo(servo_pin, pin_factory=_factory) 
-        
-#         print(f"-> Servo: Starte Pin {servo_pin}")
-
-#         # Servo öffnen
-#         servo_value = (forward_angle / 90.0) - 1.0 
-        
-#         servo.value = servo_value
-#         time.sleep(0.3)
-        
-#         if dwell > 0:
-#             time.sleep(dwell)
-        
-#         # Servo schließen
-#         servo.min() 
-#         time.sleep(0.3)
-        
-#     finally:
-#         # Sauberes Aufräumen des aktiven Servos
-#         if servo is not None:
-#             servo.detach() # Stoppt das PWM-Signal auf DIESEM Pin
-#             servo.close()
+            _en_pin.on()
